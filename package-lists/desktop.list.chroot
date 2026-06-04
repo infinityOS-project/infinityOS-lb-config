@@ -1,0 +1,12 @@
+gnome-core
+gnome-shell-extensions
+calamares
+calamares-settings-debian
+live-boot
+live-config
+live-config-systemd
+network-manager
+firefox-esr
+firmware-iwlwifi
+rsync
+sudo

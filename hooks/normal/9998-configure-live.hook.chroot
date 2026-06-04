@@ -1,0 +1,24 @@
+#!/bin/bash
+
+# Configure GDM for auto-login
+mkdir -p /etc/gdm3
+cat > /etc/gdm3/custom.conf << GDMEOF
+[daemon]
+AutomaticLoginEnable=true
+AutomaticLogin=user
+GDMEOF
+
+# Enable Calamares desktop icon for live session
+mkdir -p /etc/skel/Desktop
+cat > /etc/skel/Desktop/calamares.desktop << CALEOF
+[Desktop Entry]
+Type=Application
+Name=Install System
+Exec=pkexec calamares
+Icon=calamares
+Terminal=false
+Categories=System;
+CALEOF
+
+chmod +x /etc/skel/Desktop/calamares.desktop
+

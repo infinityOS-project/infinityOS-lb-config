@@ -1,0 +1,11 @@
+#!/bin/sh
+set -e
+
+echo "Setting Sedona Plymouth theme..."
+
+# 1. Register the sedona theme
+update-alternatives --install /usr/share/plymouth/themes/default.plymouth default.plymouth /usr/share/plymouth/themes/sedona/sedona.plymouth 500
+
+# 2. Set sedona as the default and rebuild the initramfs
+# Using -R is the shortcut to rebuild the boot image automatically
+plymouth-set-default-theme -R sedona

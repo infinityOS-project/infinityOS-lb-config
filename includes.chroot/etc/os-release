@@ -1,0 +1,7 @@
+PRETTY_NAME="OriginUI(sedona-edamame)"
+NAME="OriginUi"
+VERSION_ID="26"
+VERSION="26 (sedona)"
+VERSION_CODENAME=sedona
+DEBIAN_VERSION_FULL=13.3
+ID=sedona

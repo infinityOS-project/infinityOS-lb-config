@@ -1,0 +1,16 @@
+logo_image = Image("originUi_logo.png");
+
+logo_sprite = Sprite();
+
+screen_width = Window.GetWidth();
+screen_height = Window.GetHeight();
+
+center_x = (screen_width / 2) - (logo_image.GetWidth() / 2);
+center_y = (screen_height / 2) - (logo_image.GetHeight() / 2);
+
+logo_sprite.SetImage(logo_image);
+logo_sprite.SetX(center_x);
+logo_sprite.SetY(center_y);
+
+Window.SetBackgroundTopColor(0, 0, 0);    // Dark Gray
+Window.SetBackgroundBottomColor(0, 0, 0); // Dark Gray

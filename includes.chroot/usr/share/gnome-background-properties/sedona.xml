@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE wallpapers SYSTEM "gnome-wp-list.dtd">
+<wallpapers>
+  <wallpaper deleted="false">
+    <name>Bright Future</name>
+    <filename>/usr/share/backgrounds/sedona/brightFuture.png</filename>
+    <options>zoom</options>
+  </wallpaper>
+  <wallpaper deleted="false">
+    <name>Origin Light</name>
+    <filename>/usr/share/backgrounds/sedona/OriginLight.png</filename>
+    <options>zoom</options>
+  </wallpaper>
+  <wallpaper deleted="false">
+    <name>Origin Dark</name>
+    <filename>/usr/share/backgrounds/sedona/OriginDark.png</filename>
+    <options>zoom</options>
+  </wallpaper>
+  <wallpaper deleted="false">
+    <name>Second</name>
+    <filename>/usr/share/backgrounds/sedona/second.png</filename>
+    <options>zoom</options>
+  </wallpaper>
+  <wallpaper deleted="false">
+    <name>Third</name>
+    <filename>/usr/share/backgrounds/sedona/third.png</filename>
+    <options>zoom</options>
+  </wallpaper>
+  <wallpaper deleted="false">
+    <name>Fourth</name>
+    <filename>/usr/share/backgrounds/sedona/fourth.png</filename>
+    <options>zoom</options>
+  </wallpaper>
+  <wallpaper deleted="false">
+    <name>Main</name>
+    <filename>/usr/share/backgrounds/sedona/main.png</filename>
+    <options>zoom</options>
+  </wallpaper>
+</wallpapers>

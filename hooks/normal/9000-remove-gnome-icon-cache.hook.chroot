@@ -1,0 +1,4 @@
+#!/bin/bash
+set -e
+gtk-update-icon-cache -f -t /usr/share/icons/Radience/ || true
+gtk-update-icon-cache -f -t /usr/share/icons/hicolor/ || true
