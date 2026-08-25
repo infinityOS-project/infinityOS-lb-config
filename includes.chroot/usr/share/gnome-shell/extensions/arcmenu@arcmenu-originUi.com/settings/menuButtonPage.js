@@ -143,7 +143,17 @@ class ArcMenuMenuButtonPage extends Adw.PreferencesPage {
         });
         menuButtonCustomTextBoxRow.add_suffix(menuButtonCustomTextEntry);
 
+        const orbitIconRow = new Adw.SwitchRow({
+            title: _('Orbit Icon Animation'),
+            subtitle: _('Animate the menu button icon with an orbiting effect'),
+            active: this._settings.get_boolean('orbit-icon-enabled'),
+        });
+        orbitIconRow.connect('notify::active', widget => {
+            this._settings.set_boolean('orbit-icon-enabled', widget.active);
+        });
+
         menuButtonAppearanceFrame.add(menuButtonAppearanceRow);
+        menuButtonAppearanceFrame.add(orbitIconRow);
         menuButtonAppearanceFrame.add(menuButtonCustomTextBoxRow);
         menuButtonAppearanceFrame.add(menuButtonPaddingRow);
         menuButtonAppearanceFrame.add(menuButtonOffsetRow);

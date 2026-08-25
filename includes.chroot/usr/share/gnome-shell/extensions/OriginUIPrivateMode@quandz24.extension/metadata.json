@@ -1,0 +1,7 @@
+{
+  "uuid": "OriginUIPrivateMode@quandz24.extension",
+  "name": "Private Mode",
+  "description": "Quick Settings toggle for microphone, camera, and location privacy controls.",
+  "shell-version": ["48"],
+  "version": 1
+}

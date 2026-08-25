@@ -2,7 +2,7 @@
 icon-theme='Radience'
 
 [org.gnome.shell]
-enabled-extensions=['dash-to-panel-esteros@gnome-shell-extensions.esterdev.github.com', 'arcmenu@arcmenu-originUi.com', 'user-theme@gnome-shell-extensions.gcampax.github.com', 'Origin@appscreen']
+enabled-extensions=['dash-to-panel-esteros@gnome-shell-extensions.esterdev.github.com', 'arcmenu@arcmenu-originUi.com', 'user-theme@gnome-shell-extensions.gcampax.github.com', 'Origin@appscreen', 'OriginUICC@quandz24.extension', 'OriginUIPrivateMode@quandz24.extension']
 disable-user-extensions=false
 
 [org.gnome.desktop.background]

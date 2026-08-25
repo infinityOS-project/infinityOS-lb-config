@@ -6,6 +6,14 @@
   margin: 0px;
 }
 
+.arcmenu-panel-menu:hover,
+.arcmenu-panel-menu:focus,
+.arcmenu-panel-menu:active,
+.arcmenu-panel-menu:checked {
+  background-color: rgba(0, 122, 255, 0.2);
+  box-shadow: none;
+}
+
 .arcmenu-grid-animation-prehide .ArcMenuIconGrid {
   opacityd: 0;
 }

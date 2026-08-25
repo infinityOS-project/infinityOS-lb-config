@@ -143,7 +143,7 @@ export const MenuController = class {
         Utils.connectSettings(['pinned-apps'], this._updatePinnedApps.bind(this), this);
         Utils.connectSettings(['menu-position-alignment'], this._setMenuPositionAlignment.bind(this), this);
         Utils.connectSettings(['menu-button-icon'], this._setButtonIcon.bind(this), this);
-        Utils.connectSettings(['menu-button-appearance'], this._setButtonAppearance.bind(this), this);
+        Utils.connectSettings(['menu-button-appearance', 'orbit-icon-enabled'], this._setButtonAppearance.bind(this), this);
         Utils.connectSettings(['menu-button-text'], this._setButtonText.bind(this), this);
         Utils.connectSettings(['menu-button-icon-size'], this._setButtonIconSize.bind(this), this);
         Utils.connectSettings(['menu-button-padding'], this._setButtonIconPadding.bind(this), this);
@@ -334,7 +334,7 @@ export const MenuController = class {
             break;
         case Constants.MenuButtonAppearance.ICON:
         default:
-            menuButtonWidget.showIcon();
+            menuButtonWidget.showOrbitIcon();
         }
     }
 

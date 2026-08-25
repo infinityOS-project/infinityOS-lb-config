@@ -16,6 +16,7 @@ import * as Constants from "./constants.js";
 import * as LayoutHandler from "./menulayouts/layoutHandler.js";
 import * as MW from "./menuWidgets.js";
 import * as Utils from "./utils.js";
+import { OrbitMenuButtonWidget } from "./orbitMenuButton.js";
 
 import {
   Extension,
@@ -77,6 +78,7 @@ class MenuButtonWidget extends St.BoxLayout {
   constructor() {
     super({
       style_class: "panel-status-menu-box",
+      style: "margin-left: 8px;",
     });
 
     this._icon = new St.Icon({
@@ -91,8 +93,37 @@ class MenuButtonWidget extends St.BoxLayout {
       y_align: Clutter.ActorAlign.CENTER,
     });
 
+    this._orbitIcon = new OrbitMenuButtonWidget(
+      [
+        "org.gnome.Contacts",
+        "org.gnome.Calendar",
+        "org.gnome.Loupe",
+        "org.gnome.Maps",
+        "org.gnome.Evince",
+      ],
+      18
+    );
+    this._orbitIcon.hide();
+
     this.add_child(this._icon);
+    this.add_child(this._orbitIcon);
     this.add_child(this._label);
+  }
+
+  showOrbitIcon() {
+    if (!ArcMenuManager.settings.get_boolean("orbit-icon-enabled")) {
+      this.showIcon();
+      return;
+    }
+    this._icon.hide();
+    this._label.hide();
+    this._orbitIcon.show();
+    this.set_child_at_index(this._orbitIcon, 0);
+    this._orbitIcon.startAnimation();
+  }
+
+  pulseOrbit() {
+    if (this._orbitIcon.visible) this._orbitIcon.pulse();
   }
 
   addStylePseudoClass(style) {
@@ -106,6 +137,8 @@ class MenuButtonWidget extends St.BoxLayout {
   }
 
   showIcon() {
+    this._orbitIcon.stopAnimation();
+    this._orbitIcon.hide();
     this._icon.show();
     this._label.hide();
 
@@ -113,6 +146,8 @@ class MenuButtonWidget extends St.BoxLayout {
   }
 
   showText() {
+    this._orbitIcon.stopAnimation();
+    this._orbitIcon.hide();
     this._icon.hide();
     this._label.show();
 
@@ -120,17 +155,39 @@ class MenuButtonWidget extends St.BoxLayout {
   }
 
   showIconText() {
-    this._icon.show();
+    if (!ArcMenuManager.settings.get_boolean("orbit-icon-enabled")) {
+      this._orbitIcon.stopAnimation();
+      this._orbitIcon.hide();
+      this._icon.show();
+      this._label.show();
+
+      this.set_child_at_index(this._icon, 0);
+      return;
+    }
+    this._icon.hide();
+    this._orbitIcon.show();
     this._label.show();
 
-    this.set_child_at_index(this._icon, 0);
+    this.set_child_at_index(this._orbitIcon, 0);
+    this._orbitIcon.startAnimation();
   }
 
   showTextIcon() {
-    this._icon.show();
+    if (!ArcMenuManager.settings.get_boolean("orbit-icon-enabled")) {
+      this._orbitIcon.stopAnimation();
+      this._orbitIcon.hide();
+      this._icon.show();
+      this._label.show();
+
+      this.set_child_at_index(this._label, 0);
+      return;
+    }
+    this._icon.hide();
+    this._orbitIcon.show();
     this._label.show();
 
     this.set_child_at_index(this._label, 0);
+    this._orbitIcon.startAnimation();
   }
 
   getPanelLabel() {
@@ -513,12 +570,14 @@ export const MenuButton = GObject.registerClass(
 
     vfunc_event(event) {
       if (event.type() === Clutter.EventType.BUTTON_PRESS) {
+        this.menuButtonWidget.pulseOrbit();
         const clickAction = this._getClickActionForButton(event.get_button());
         if (clickAction === Constants.MenuButtonClickAction.ARCMENU)
           this.toggleMenu();
         else if (clickAction === Constants.MenuButtonClickAction.CONTEXT_MENU)
           this.arcMenuContextMenu.toggle();
       } else if (event.type() === Clutter.EventType.TOUCH_BEGIN) {
+        this.menuButtonWidget.pulseOrbit();
         this.toggleMenu();
       }
       return Clutter.EVENT_PROPAGATE;

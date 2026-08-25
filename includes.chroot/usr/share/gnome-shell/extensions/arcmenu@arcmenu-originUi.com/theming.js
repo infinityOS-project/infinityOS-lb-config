@@ -212,7 +212,7 @@ export class CustomStylesheet {
     const menuSeparatorColor = "rgba(255, 255, 255, 0.1)";
     const itemHoverBGColor = "rgba(255, 255, 255, 0.1)";
     const itemHoverFGColor = "rgb(255, 255, 255)";
-    const itemActiveBGColor = "rgba(255, 255, 255, 0.1)";
+    const itemActiveBGColor = "rgba(255, 255, 255, 1.0)";
     const itemActiveFGColor = "rgb(255, 255, 255)";
 
     return `.arcmenu-menu{

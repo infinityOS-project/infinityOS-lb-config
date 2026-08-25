@@ -558,6 +558,10 @@
       <default>'Icon'</default>
       <summary>Appearance of the menu button.</summary>
     </key>
+    <key name="orbit-icon-enabled" type="b">
+      <default>true</default>
+      <summary>Enable the orbit-animated menu button icon.</summary>
+    </key>
       <key name="avatar-style" enum="org.gnome.shell.extensions.arcmenu.avatar-style">
       <default>'Round'</default>
       <summary>Appearance of the avatar icon.</summary>
