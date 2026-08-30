@@ -20,7 +20,11 @@ jobs:
       - name: Install live-build and dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y live-build debootstrap xorriso
+          sudo apt-get install -y debootstrap xorriso wget
+          LB_DEB_URL=$(curl -s http://deb.debian.org/debian/pool/main/l/live-build/ | grep -oP 'live-build_[^"]+_all\.deb' | sort -V | tail -n1)
+          wget "http://deb.debian.org/debian/pool/main/l/live-build/${LB_DEB_URL}"
+          sudo apt-get install -y "./${LB_DEB_URL}"
+          lb --version
 
       - name: Configure live-build
         working-directory: build
