@@ -1,0 +1,1995 @@
+import Clutter from "gi://Clutter";
+import GLib from "gi://GLib";
+import Shell from "gi://Shell";
+import St from "gi://St";
+
+import * as Background from "resource:///org/gnome/shell/ui/background.js";
+import * as Main from "resource:///org/gnome/shell/ui/main.js";
+
+const OVERVIEW_BACKGROUND_BLUR_EFFECT = "originuicc-overview-background-blur";
+const OVERVIEW_BACKGROUND_BLUR_RADIUS = 90;
+const OVERVIEW_BACKGROUND_BLUR_BRIGHTNESS = 0.8;
+
+const APP_LIBRARY_TAB_ALL = 0;
+const APP_LIBRARY_TAB_ARRANGED = 1;
+const ARRANGED_FOLDERS_PER_PAGE = 8;
+const ARRANGED_REBUILD_DELAY = 250;
+const APP_LIBRARY_SWITCH_WIDTH = 288;
+const APP_LIBRARY_SWITCH_HEIGHT = 44;
+const APP_LIBRARY_SWITCH_PADDING = 4;
+const APP_LIBRARY_SWITCH_TAB_WIDTH =
+  (APP_LIBRARY_SWITCH_WIDTH - APP_LIBRARY_SWITCH_PADDING * 2) / 2;
+const APP_LIBRARY_SWITCH_TAB_HEIGHT =
+  APP_LIBRARY_SWITCH_HEIGHT - APP_LIBRARY_SWITCH_PADDING * 2;
+const ARRANGED_PAGE_ANIMATION_TIME = 260;
+const ARRANGED_SIDE_PAGE_OPACITY = 128;
+const ARRANGED_SIDE_PAGE_SCALE = 0.8;
+const ARRANGED_SIDE_PAGE_OFFSET_RATIO = 0.58;
+const FOLDER_OPEN_ANIMATION_TIME = 350;
+const FOLDER_CLOSE_ANIMATION_TIME = 420;
+const FOLDER_OPEN_GRID_SCALE = 0.8;
+const FOLDER_OPEN_GRID_OPACITY = 0;
+const FOLDER_OPEN_ICON_DELAY = 20;
+const FOLDER_OPEN_VISIBLE_ICON_COUNT = 7;
+const CLOSED_FOLDER_PREVIEW_SIZE = 132;
+const CLOSED_FOLDER_PREVIEW_PADDING = 10;
+const CLOSED_FOLDER_PREVIEW_RADIUS = 30;
+const CLOSED_FOLDER_CELL_SIZE = 52;
+const CLOSED_FOLDER_CELL_SPACING = 8;
+const ARRANGED_NAV_BUTTON_SIZE = 52;
+const ARRANGED_NAV_SIDE_MARGIN = 38;
+const ARRANGED_PAGE_INDICATOR_DOT_SIZE = 7;
+const ARRANGED_PAGE_INDICATOR_DOT_SPACING = 9;
+const ARRANGED_PAGE_INDICATOR_BOTTOM = 10;
+const OPEN_FOLDER_ICON_SIZE = 104;
+const OPEN_FOLDER_ICON_TEXTURE_SIZE = 88;
+const ICON_HOVER_IN_TIME = 90;
+const ICON_HOVER_OUT_TIME = 280;
+
+const ARRANGED_FOLDER_RULES = [
+  {
+    key: "utilities",
+    title: "Utilities",
+    categories: ["Utility", "Settings"],
+    idParts: ["settings", "tweaks", "terminal", "console", "calculator"],
+  },
+  {
+    key: "communication",
+    title: "Communication",
+    categories: [
+      "Network",
+      "Email",
+      "Chat",
+      "InstantMessaging",
+      "Telephony",
+      "ContactManagement",
+    ],
+    idParts: ["mail", "chat", "message", "telegram", "discord", "whatsapp"],
+  },
+  {
+    key: "productivity",
+    title: "Productivity",
+    categories: ["Calendar", "Clock", "TextEditor", "ProjectManagement"],
+    idParts: ["calendar", "todo", "notes", "agenda", "planner"],
+  },
+  {
+    key: "home-arcade",
+    title: "Home & Arcade",
+    categories: ["Game", "KidsGame", "ArcadeGame", "Amusement"],
+    idParts: ["game", "steam", "lutris", "heroic"],
+  },
+  {
+    key: "suggested",
+    title: "Suggested",
+    categories: ["AudioVideo", "Audio", "Video", "Player", "Music"],
+    idParts: ["music", "video", "player", "photos", "camera"],
+  },
+  {
+    key: "information-banking",
+    title: "Information & Banking",
+    categories: ["Finance", "News", "Education", "Science"],
+    idParts: ["bank", "finance", "news", "reader", "books"],
+  },
+  {
+    key: "office",
+    title: "Office",
+    categories: ["Office", "Spreadsheet", "WordProcessor", "Presentation"],
+    idParts: ["office", "writer", "calc", "impress", "document"],
+  },
+  {
+    key: "graphics",
+    title: "Graphics",
+    categories: ["Graphics", "Photography", "2DGraphics", "RasterGraphics"],
+    idParts: ["image", "photo", "draw", "gimp", "inkscape"],
+  },
+  {
+    key: "development",
+    title: "Development",
+    categories: ["Development", "IDE", "GUIDesigner"],
+    idParts: ["code", "studio", "builder", "git", "developer"],
+  },
+  {
+    key: "system",
+    title: "System",
+    categories: ["System", "Monitor", "Security"],
+    idParts: ["system", "monitor", "disk", "logs"],
+  },
+];
+
+function _getAppCategories(appInfo) {
+  try {
+    const categories = appInfo.get_categories();
+    return categories ? categories.split(";").filter(Boolean) : [];
+  } catch (_) {
+    return [];
+  }
+}
+
+function _appMatchesRule(appInfo, rule) {
+  const categories = _getAppCategories(appInfo);
+  const id = appInfo.get_id()?.toLowerCase?.() ?? "";
+  const name = appInfo.get_display_name?.()?.toLowerCase?.() ?? "";
+
+  if (categories.some((category) => rule.categories.includes(category)))
+    return true;
+
+  return rule.idParts.some((part) => id.includes(part) || name.includes(part));
+}
+
+function _createIconTexture(app, size) {
+  try {
+    return app.create_icon_texture(size);
+  } catch (_) {
+    return new St.Icon({
+      icon_name: "application-x-executable-symbolic",
+      icon_size: size,
+    });
+  }
+}
+
+class OriginSegmentedControl {
+  constructor(tab1Label, tab2Label, onChanged) {
+    this.actor = new St.Widget({
+      style_class: "originuicc-app-library-switch",
+      layout_manager: new Clutter.BinLayout(),
+      x_align: Clutter.ActorAlign.CENTER,
+      y_align: Clutter.ActorAlign.CENTER,
+      reactive: true,
+      width: APP_LIBRARY_SWITCH_WIDTH,
+      height: APP_LIBRARY_SWITCH_HEIGHT,
+    });
+
+    this._indicatorTrack = new St.Widget({
+      style_class: "originuicc-app-library-switch-indicator-track",
+      layout_manager: new Clutter.FixedLayout(),
+      x_align: Clutter.ActorAlign.CENTER,
+      y_align: Clutter.ActorAlign.CENTER,
+      width: APP_LIBRARY_SWITCH_TAB_WIDTH * 2,
+      height: APP_LIBRARY_SWITCH_TAB_HEIGHT,
+      reactive: false,
+    });
+
+    this._indicator = new St.Widget({
+      style_class: "originuicc-app-library-switch-indicator",
+      width: APP_LIBRARY_SWITCH_TAB_WIDTH,
+      height: APP_LIBRARY_SWITCH_TAB_HEIGHT,
+      reactive: false,
+    });
+
+    this._tabs = new St.BoxLayout({
+      style_class: "originuicc-app-library-switch-tabs",
+      x_align: Clutter.ActorAlign.CENTER,
+      y_align: Clutter.ActorAlign.CENTER,
+      width: APP_LIBRARY_SWITCH_TAB_WIDTH * 2,
+      height: APP_LIBRARY_SWITCH_TAB_HEIGHT,
+    });
+
+    this._buttons = [
+      this._createButton(tab1Label, APP_LIBRARY_TAB_ALL, onChanged),
+      this._createButton(tab2Label, APP_LIBRARY_TAB_ARRANGED, onChanged),
+    ];
+
+    this._indicatorTrack.add_child(this._indicator);
+    this._tabs.add_child(this._buttons[0]);
+    this._tabs.add_child(this._buttons[1]);
+    this.actor.add_child(this._indicatorTrack);
+    this.actor.add_child(this._tabs);
+
+    this.setActive(APP_LIBRARY_TAB_ALL, false);
+  }
+
+  destroy() {
+    this.actor.destroy();
+  }
+
+  _createButton(label, index, onChanged) {
+    const button = new St.Button({
+      style_class: "originuicc-app-library-switch-tab",
+      label,
+      can_focus: true,
+      width: APP_LIBRARY_SWITCH_TAB_WIDTH,
+      height: APP_LIBRARY_SWITCH_TAB_HEIGHT,
+    });
+
+    button.connect("clicked", () => onChanged(index));
+    return button;
+  }
+
+  setActive(index, animate = true) {
+    this._activeIndex = index;
+
+    for (let i = 0; i < this._buttons.length; i++) {
+      if (i === index) this._buttons[i].add_style_pseudo_class("checked");
+      else this._buttons[i].remove_style_pseudo_class("checked");
+    }
+
+    const targetX = index * APP_LIBRARY_SWITCH_TAB_WIDTH;
+    this._indicator.remove_all_transitions?.();
+
+    if (!animate) {
+      this._indicator.x = targetX;
+      return;
+    }
+
+    this._indicator.ease({
+      x: targetX,
+      duration: 220,
+      mode: Clutter.AnimationMode.EASE_OUT_CUBIC,
+    });
+  }
+}
+
+class OriginArrangedAppGrid {
+  constructor() {
+    this.actor = new St.Widget({
+      style_class: "originuicc-arranged-app-grid",
+      layout_manager: new Clutter.FixedLayout(),
+      x_expand: true,
+      y_expand: true,
+      x_align: Clutter.ActorAlign.FILL,
+      y_align: Clutter.ActorAlign.FILL,
+      visible: false,
+    });
+
+    this._pageBin = new St.Widget({
+      style_class: "originuicc-arranged-page-bin",
+      layout_manager: new Clutter.BinLayout(),
+      x_expand: true,
+      y_expand: true,
+      x_align: Clutter.ActorAlign.FILL,
+      y_align: Clutter.ActorAlign.FILL,
+      clip_to_allocation: false,
+    });
+
+    this._prevButton = this._createNavButton(
+      "carousel-arrow-previous-symbolic",
+      "previous",
+      () => this.goToPage(this._currentPage - 1),
+    );
+    this._nextButton = this._createNavButton(
+      "carousel-arrow-next-symbolic",
+      "next",
+      () => this.goToPage(this._currentPage + 1),
+    );
+
+    this._navLayer = new St.Widget({
+      style_class: "originuicc-arranged-nav-layer",
+      layout_manager: new Clutter.FixedLayout(),
+      x_expand: true,
+      y_expand: true,
+      x_align: Clutter.ActorAlign.FILL,
+      y_align: Clutter.ActorAlign.FILL,
+      reactive: false,
+    });
+
+    this._pageIndicators = new St.BoxLayout({
+      style_class: "originuicc-arranged-page-indicators",
+      x_align: Clutter.ActorAlign.CENTER,
+      y_align: Clutter.ActorAlign.END,
+      x_expand: false,
+      y_expand: false,
+    });
+
+    this.actor.add_child(this._pageBin);
+    this._navLayer.add_child(this._prevButton);
+    this._navLayer.add_child(this._nextButton);
+    this.actor.add_child(this._navLayer);
+    this.actor.add_child(this._pageIndicators);
+
+    this._folders = [];
+    this._pages = [];
+    this._pageActors = [];
+    this._currentPage = 0;
+    this._openFolderOverlay = null;
+
+    this.actor.connect("notify::allocation", () => {
+      this._syncShellPositions();
+
+      if (this._openFolderOverlay) {
+        const { overlay, clone, iconLayer } = this._openFolderOverlay;
+        this._syncOpenOverlayGeometry(overlay, clone, iconLayer);
+      }
+
+      this._syncPageActors(false);
+    });
+  }
+
+  destroy() {
+    this._closeOpenFolder(false);
+    this.actor.destroy();
+  }
+
+  rebuild(appRecords) {
+    this._closeOpenFolder(false);
+    this._folders = this._buildFolders(appRecords);
+    this._pages = [];
+    this._pageActors = [];
+    this._pageBin.destroy_all_children();
+
+    for (let i = 0; i < this._folders.length; i += ARRANGED_FOLDERS_PER_PAGE)
+      this._pages.push(this._folders.slice(i, i + ARRANGED_FOLDERS_PER_PAGE));
+
+    if (this._pages.length === 0) this._pages.push([]);
+
+    this._currentPage = Math.clamp(
+      this._currentPage,
+      0,
+      Math.max(this._pages.length - 1, 0),
+    );
+
+    for (const folders of this._pages) {
+      const pageActor = this._createPageActor(folders);
+      this._pageActors.push(pageActor);
+      this._pageBin.add_child(pageActor);
+    }
+
+    this._syncPageActors(false);
+    this._syncNavigation();
+    this._syncShellPositions();
+  }
+
+  goToPage(pageIndex) {
+    const page = Math.clamp(pageIndex, 0, Math.max(this._pages.length - 1, 0));
+
+    if (page === this._currentPage) return;
+
+    this._currentPage = page;
+    this._syncPageActors(true);
+    this._syncNavigation();
+    this._syncShellPositions();
+  }
+
+  _createNavButton(iconName, side, onClicked) {
+    const button = new St.Button({
+      style_class: `originuicc-arranged-nav-button ${side}`,
+      icon_name: iconName,
+      x_align:
+        side === "previous" ? Clutter.ActorAlign.START : Clutter.ActorAlign.END,
+      y_align: Clutter.ActorAlign.CENTER,
+      x_expand: false,
+      y_expand: false,
+      can_focus: true,
+    });
+
+    button.connect("clicked", onClicked);
+    return button;
+  }
+
+  _syncShellPositions() {
+    const width = this.actor.allocation?.get_width?.() || this.actor.width || 0;
+    const height =
+      this.actor.allocation?.get_height?.() || this.actor.height || 0;
+
+    if (width <= 0 || height <= 0) return;
+
+    this._pageBin.set_position(0, 0);
+    this._pageBin.set_size(width, height);
+    this._navLayer.set_position(0, 0);
+    this._navLayer.set_size(width, height);
+
+    this._prevButton.set_position(
+      ARRANGED_NAV_SIDE_MARGIN,
+      Math.round((height - ARRANGED_NAV_BUTTON_SIZE) / 2),
+    );
+    this._nextButton.set_position(
+      Math.max(
+        ARRANGED_NAV_SIDE_MARGIN,
+        width - ARRANGED_NAV_SIDE_MARGIN - ARRANGED_NAV_BUTTON_SIZE,
+      ),
+      Math.round((height - ARRANGED_NAV_BUTTON_SIZE) / 2),
+    );
+
+    const hasMultiplePages = this._pages.length > 1;
+    const indicatorWidth = hasMultiplePages
+      ? this._pages.length * ARRANGED_PAGE_INDICATOR_DOT_SIZE +
+        Math.max(0, this._pages.length - 1) *
+          ARRANGED_PAGE_INDICATOR_DOT_SPACING
+      : 1;
+    const indicatorHeight = ARRANGED_PAGE_INDICATOR_DOT_SIZE;
+
+    this._pageIndicators.set_position(
+      Math.round((width - indicatorWidth) / 2),
+      Math.max(0, height - indicatorHeight - ARRANGED_PAGE_INDICATOR_BOTTOM),
+    );
+  }
+
+  _buildFolders(appRecords) {
+    const folders = ARRANGED_FOLDER_RULES.map((rule) => ({
+      key: rule.key,
+      title: rule.title,
+      apps: [],
+    }));
+    const otherFolder = {
+      key: "other",
+      title: "Other",
+      apps: [],
+    };
+
+    for (const record of appRecords) {
+      const index = ARRANGED_FOLDER_RULES.findIndex((rule) =>
+        _appMatchesRule(record.appInfo, rule),
+      );
+
+      if (index >= 0) folders[index].apps.push(record.app);
+      else otherFolder.apps.push(record.app);
+    }
+
+    return [...folders, otherFolder].filter((folder) => folder.apps.length > 0);
+  }
+
+  _syncPageActors(animate = true) {
+    if (this._openFolderOverlay) return;
+
+    const width = this._getPageTravelWidth();
+    const duration = animate ? ARRANGED_PAGE_ANIMATION_TIME : 0;
+
+    this._pageActors.forEach((pageActor, pageIndex) => {
+      const distance = pageIndex - this._currentPage;
+      const isNeighbor = Math.abs(distance) === 1;
+      const isVisible = Math.abs(distance) <= 1;
+      const translationX = Math.round(
+        distance * width * ARRANGED_SIDE_PAGE_OFFSET_RATIO,
+      );
+      const opacity =
+        distance === 0 ? 255 : isNeighbor ? ARRANGED_SIDE_PAGE_OPACITY : 0;
+      const scale = distance === 0 ? 1 : ARRANGED_SIDE_PAGE_SCALE;
+
+      pageActor.remove_all_transitions();
+      pageActor.set_pivot_point(0.5, 0.5);
+
+      if (!animate) {
+        pageActor.visible = isVisible;
+        pageActor.translation_x = translationX;
+        pageActor.opacity = opacity;
+        pageActor.scale_x = scale;
+        pageActor.scale_y = scale;
+        return;
+      }
+
+      if (isVisible) pageActor.show();
+
+      pageActor.ease({
+        translation_x: translationX,
+        opacity,
+        scale_x: scale,
+        scale_y: scale,
+        duration,
+        mode: Clutter.AnimationMode.EASE_OUT_CUBIC,
+        onComplete: () => {
+          pageActor.visible = isVisible;
+        },
+      });
+    });
+  }
+
+  _getPageTravelWidth() {
+    const allocationWidth = this.actor.allocation?.get_width?.() ?? 0;
+    const monitorWidth = Main.layoutManager.primaryMonitor?.width ?? 1280;
+
+    return Math.max(allocationWidth, monitorWidth);
+  }
+
+  _createPageActor(folders) {
+    const page = new St.BoxLayout({
+      style_class: "originuicc-arranged-page",
+      orientation: Clutter.Orientation.VERTICAL,
+      x_align: Clutter.ActorAlign.CENTER,
+      y_align: Clutter.ActorAlign.CENTER,
+    });
+
+    for (let rowIndex = 0; rowIndex < 2; rowIndex++) {
+      const row = new St.BoxLayout({
+        style_class: "originuicc-arranged-folder-row",
+        x_align: Clutter.ActorAlign.CENTER,
+      });
+
+      for (let columnIndex = 0; columnIndex < 4; columnIndex++) {
+        const folder = folders[rowIndex * 4 + columnIndex];
+        row.add_child(
+          folder ? this._createFolderActor(folder) : this._createSpacer(),
+        );
+      }
+
+      page.add_child(row);
+    }
+
+    return page;
+  }
+
+  _createSpacer() {
+    return new St.Widget({
+      style_class: "originuicc-arranged-folder-spacer",
+      reactive: false,
+    });
+  }
+
+  _createFolderActor(folder) {
+    const folderActor = new St.BoxLayout({
+      style_class: "originuicc-arranged-folder",
+      orientation: Clutter.Orientation.VERTICAL,
+      x_align: Clutter.ActorAlign.CENTER,
+      y_align: Clutter.ActorAlign.CENTER,
+      reactive: false,
+      clip_to_allocation: false,
+    });
+
+    const preview = this._createFolderPreview(folder, {
+      styleClass: "originuicc-arranged-folder-preview",
+      openFolder:
+        folder.apps.length > 4
+          ? (sourceActor) => this._openFolder(folder, sourceActor, folderActor)
+          : null,
+    });
+
+    const label = new St.Label({
+      style_class: "originuicc-arranged-folder-label",
+      text: folder.title,
+      x_align: Clutter.ActorAlign.CENTER,
+      y_align: Clutter.ActorAlign.CENTER,
+      width: 152,
+    });
+
+    folderActor.add_child(preview);
+    folderActor.add_child(label);
+
+    return folderActor;
+  }
+
+  _createFolderPreview(folder, params = {}) {
+    const preview = new St.Widget({
+      style_class: params.styleClass ?? "originuicc-arranged-folder-preview",
+      layout_manager: new Clutter.FixedLayout(),
+      x_align: Clutter.ActorAlign.CENTER,
+      y_align: Clutter.ActorAlign.CENTER,
+      reactive: false,
+      width: CLOSED_FOLDER_PREVIEW_SIZE,
+      height: CLOSED_FOLDER_PREVIEW_SIZE,
+    });
+    preview._previewCells = [];
+
+    for (let index = 0; index < 4; index++) {
+      let cell;
+
+      if (folder.apps.length > 4 && index === 3)
+        cell = this._createMoreAppsCell(
+          folder.apps.slice(3, 10),
+          params.openFolder,
+        );
+      else if (folder.apps[index])
+        cell = this._createClosedAppCell(folder.apps[index]);
+      else cell = this._createEmptyCell();
+
+      const column = index % 2;
+      const row = Math.floor(index / 2);
+      cell.x =
+        CLOSED_FOLDER_PREVIEW_PADDING +
+        column * (CLOSED_FOLDER_CELL_SIZE + CLOSED_FOLDER_CELL_SPACING);
+      cell.y =
+        CLOSED_FOLDER_PREVIEW_PADDING +
+        row * (CLOSED_FOLDER_CELL_SIZE + CLOSED_FOLDER_CELL_SPACING);
+
+      preview._previewCells.push(cell);
+      preview.add_child(cell);
+    }
+
+    return preview;
+  }
+
+  _createClosedAppCell(app) {
+    return new St.Bin({
+      style_class: "originuicc-arranged-app-cell",
+      reactive: false,
+      x_align: Clutter.ActorAlign.CENTER,
+      y_align: Clutter.ActorAlign.CENTER,
+      x_expand: false,
+      y_expand: false,
+      width: 52,
+      height: 52,
+      child: _createIconTexture(app, 52),
+    });
+  }
+
+  _createMoreAppsCell(apps, onClicked = null) {
+    const cell = new St.Button({
+      style_class: "originuicc-arranged-app-cell originuicc-arranged-more-cell",
+      can_focus: !!onClicked,
+      reactive: !!onClicked,
+      x_align: Clutter.ActorAlign.CENTER,
+      y_align: Clutter.ActorAlign.CENTER,
+      x_expand: false,
+      y_expand: false,
+      width: CLOSED_FOLDER_CELL_SIZE,
+      height: CLOSED_FOLDER_CELL_SIZE,
+    });
+    const content = new St.Widget({
+      style_class: "originuicc-arranged-more-content",
+      layout_manager: new Clutter.FixedLayout(),
+      reactive: false,
+      width: CLOSED_FOLDER_CELL_SIZE,
+      height: CLOSED_FOLDER_CELL_SIZE,
+    });
+    content._miniIconCells = [];
+
+    if (onClicked) cell.connect("clicked", () => onClicked(cell));
+
+    for (let index = 0; index < 4; index++) {
+      const app = apps[index];
+      const iconBin = new St.Bin({
+        style_class: "originuicc-arranged-more-icon",
+        x_align: Clutter.ActorAlign.CENTER,
+        y_align: Clutter.ActorAlign.CENTER,
+        x_expand: false,
+        y_expand: false,
+        width: 22,
+        height: 22,
+      });
+
+      iconBin.x = 3 + (index % 2) * 26;
+      iconBin.y = 3 + Math.floor(index / 2) * 26;
+
+      if (app) iconBin.child = _createIconTexture(app, 20);
+
+      content._miniIconCells.push(iconBin);
+      content.add_child(iconBin);
+    }
+
+    cell.child = content;
+    cell._miniIconCells = content._miniIconCells;
+    return cell;
+  }
+
+  _createEmptyCell() {
+    return new St.Widget({
+      style_class:
+        "originuicc-arranged-app-cell originuicc-arranged-empty-cell",
+      reactive: false,
+      x_align: Clutter.ActorAlign.CENTER,
+      y_align: Clutter.ActorAlign.CENTER,
+      x_expand: false,
+      y_expand: false,
+      width: 52,
+      height: 52,
+    });
+  }
+
+  _addIconHoverAnimation(button, icon) {
+    icon.set_pivot_point?.(0.5, 0.5);
+
+    button.connect("enter-event", () => {
+      icon.remove_all_transitions?.();
+      icon.ease({
+        scale_x: 1.1,
+        scale_y: 1.1,
+        duration: ICON_HOVER_IN_TIME,
+        mode: Clutter.AnimationMode.EASE_OUT_CUBIC,
+      });
+    });
+
+    button.connect("leave-event", () => {
+      icon.remove_all_transitions?.();
+      icon.ease({
+        scale_x: 1,
+        scale_y: 1,
+        duration: ICON_HOVER_OUT_TIME,
+        mode: Clutter.AnimationMode.EASE_OUT_CUBIC,
+      });
+    });
+  }
+
+  _openFolder(folder, sourceActor, folderActor = null) {
+    this._closeOpenFolder(false);
+
+    const sourcePreview =
+      this._getPreviewFromSourceActor(sourceActor) ?? sourceActor;
+    const sourcePreviewFrame = this._getActorStageFrame(sourcePreview);
+    const sourceIconFrames = this._capturePreviewIconStageFrames(sourcePreview);
+    const { width, height } = this._getOpenFolderSize();
+    const overlay = new St.Widget({
+      style_class: "originuicc-arranged-folder-open-overlay",
+      layout_manager: new Clutter.FixedLayout(),
+      reactive: true,
+      x_expand: false,
+      y_expand: false,
+      clip_to_allocation: false,
+      opacity: 255,
+    });
+    const pageActorStates = this._capturePageActorStates();
+    const clone = new St.Widget({
+      style_class: "originuicc-arranged-folder-open-clone",
+      layout_manager: new Clutter.BinLayout(),
+      width,
+      height,
+      x_align: Clutter.ActorAlign.START,
+      y_align: Clutter.ActorAlign.START,
+      reactive: true,
+    });
+    clone._originuiccTargetWidth = width;
+    clone._originuiccTargetHeight = height;
+    clone.set_size(width, height);
+    const surfaceLayer = new St.Widget({
+      style_class: "originuicc-arranged-folder-open-surface",
+      x_expand: true,
+      y_expand: true,
+      x_align: Clutter.ActorAlign.FILL,
+      y_align: Clutter.ActorAlign.FILL,
+      reactive: false,
+    });
+    const iconLayer = new St.Widget({
+      style_class: "originuicc-arranged-folder-open-icon-layer",
+      layout_manager: new Clutter.FixedLayout(),
+      x_expand: true,
+      y_expand: true,
+      x_align: Clutter.ActorAlign.FILL,
+      y_align: Clutter.ActorAlign.FILL,
+      reactive: false,
+      clip_to_allocation: false,
+    });
+    const content = new St.BoxLayout({
+      style_class: "originuicc-arranged-folder-open-content",
+      orientation: Clutter.Orientation.VERTICAL,
+      x_align: Clutter.ActorAlign.CENTER,
+      y_align: Clutter.ActorAlign.CENTER,
+    });
+    const title = new St.Label({
+      style_class: "originuicc-arranged-folder-open-title",
+      text: folder.title,
+      x_align: Clutter.ActorAlign.CENTER,
+      opacity: 0,
+    });
+    const appGrid = this._createOpenFolderAppGrid(
+      folder.apps,
+      iconLayer,
+      clone,
+    );
+    appGrid.scrollView.vscrollbar_policy = St.PolicyType.NEVER;
+    const forwardScroll = (event) =>
+      this._scrollOpenFolder(appGrid.scrollView, appGrid.icons, event);
+    overlay.connect("scroll-event", (_actor, event) => forwardScroll(event));
+    clone.connect("scroll-event", (_actor, event) => forwardScroll(event));
+    appGrid.actor.connect("scroll-event", (_actor, event) =>
+      forwardScroll(event),
+    );
+    for (const { iconActor } of appGrid.icons)
+      iconActor.connect("scroll-event", (_actor, event) =>
+        forwardScroll(event),
+      );
+    const adjustmentSignalId = appGrid.scrollView.vadjustment.connect(
+      "notify::value",
+      () => this._syncFlyingIconSlots(appGrid.icons),
+    );
+
+    content.add_child(title);
+    content.add_child(appGrid.actor);
+    clone.add_child(surfaceLayer);
+    clone.add_child(content);
+    overlay.add_child(clone);
+    overlay.add_child(iconLayer);
+    this.actor.add_child(overlay);
+    this._syncOpenOverlayGeometry(overlay, clone, iconLayer);
+    this._syncCloneSurfaceSourceStyle(surfaceLayer, clone, sourcePreviewFrame);
+    this._openFolderOverlay = {
+      overlay,
+      clone,
+      iconLayer,
+      sourcePreviewFrame,
+      sourceIconFrames,
+      folderActor,
+      title,
+      stageCapturedEventId: 0,
+      pageActorStates,
+      appIcons: appGrid.icons,
+      surfaceLayer,
+      scrollView: appGrid.scrollView,
+      scrollAdjustment: appGrid.scrollView.vadjustment,
+      adjustmentSignalId,
+      openScrollbarTimeoutId: 0,
+    };
+
+    if (folderActor) folderActor.opacity = 0;
+
+    this._positionCloneFromFrame(clone, sourcePreviewFrame);
+
+    overlay.opacity = 255;
+    this._animatePageActorsForFolderOpen(true);
+    this._openFolderOverlay.openScrollbarTimeoutId = GLib.timeout_add(
+      GLib.PRIORITY_DEFAULT,
+      FOLDER_OPEN_ANIMATION_TIME,
+      () => {
+        if (this._openFolderOverlay?.scrollView === appGrid.scrollView)
+          appGrid.scrollView.vscrollbar_policy = St.PolicyType.AUTOMATIC;
+        return GLib.SOURCE_REMOVE;
+      },
+    );
+    clone.ease({
+      translation_x: 0,
+      translation_y: 0,
+      scale_x: 1,
+      scale_y: 1,
+      duration: FOLDER_OPEN_ANIMATION_TIME,
+      mode: Clutter.AnimationMode.EASE_OUT_CUBIC,
+    });
+    title.ease({
+      opacity: 255,
+      duration: FOLDER_OPEN_ANIMATION_TIME,
+      mode: Clutter.AnimationMode.EASE_OUT_CUBIC,
+    });
+
+    this._animateOpenFolderIcons(
+      iconLayer,
+      surfaceLayer,
+      appGrid.icons,
+      sourceIconFrames,
+    );
+
+    overlay.connect("button-press-event", (_actor, event) =>
+      this._handleOpenFolderButtonPress(event),
+    );
+    GLib.idle_add(GLib.PRIORITY_DEFAULT_IDLE, () => {
+      if (this._openFolderOverlay?.overlay === overlay) {
+        this._openFolderOverlay.stageCapturedEventId = global.stage.connect(
+          "captured-event",
+          (_actor, event) => this._handleOpenFolderCapturedEvent(event),
+        );
+      }
+
+      return GLib.SOURCE_REMOVE;
+    });
+  }
+
+  _closeOpenFolder(animate = true) {
+    const state = this._openFolderOverlay;
+
+    if (!state) return;
+
+    this._openFolderOverlay = null;
+
+    const {
+      overlay,
+      clone,
+      sourcePreviewFrame,
+      sourceIconFrames,
+      folderActor,
+      title,
+      stageCapturedEventId = 0,
+      pageActorStates,
+      appIcons,
+      surfaceLayer,
+      scrollView,
+      scrollAdjustment,
+      adjustmentSignalId,
+      openScrollbarTimeoutId,
+    } = state;
+
+    overlay.remove_all_transitions?.();
+    if (stageCapturedEventId) {
+      try {
+        global.stage.disconnect(stageCapturedEventId);
+      } catch (_) {}
+    }
+    if (openScrollbarTimeoutId) {
+      try {
+        GLib.source_remove(openScrollbarTimeoutId);
+      } catch (_) {}
+    }
+    if (scrollView) scrollView.vscrollbar_policy = St.PolicyType.NEVER;
+
+    if (scrollAdjustment && adjustmentSignalId) {
+      try {
+        scrollAdjustment.disconnect(adjustmentSignalId);
+      } catch (_) {}
+    }
+
+    if (!animate) {
+      overlay.destroy();
+
+      if (folderActor) folderActor.opacity = 255;
+
+      this._restorePageActors(pageActorStates, false);
+      return;
+    }
+
+    if (folderActor) folderActor.opacity = 0;
+
+    this._restorePageActors(pageActorStates, true);
+
+    this._animateCloseFolderIcons(appIcons, surfaceLayer, sourceIconFrames);
+
+    title?.ease({
+      opacity: 0,
+      duration: FOLDER_CLOSE_ANIMATION_TIME,
+      mode: Clutter.AnimationMode.EASE_OUT_CUBIC,
+    });
+
+    const target = this._getCloneSourceTransformFromFrame(
+      clone,
+      sourcePreviewFrame,
+    );
+
+    clone.ease({
+      translation_x: target.translationX,
+      translation_y: target.translationY,
+      scale_x: target.scaleX,
+      scale_y: target.scaleY,
+      duration: FOLDER_CLOSE_ANIMATION_TIME,
+      mode: Clutter.AnimationMode.EASE_OUT_CUBIC,
+    });
+
+    GLib.timeout_add(GLib.PRIORITY_DEFAULT, FOLDER_CLOSE_ANIMATION_TIME, () => {
+      if (folderActor) folderActor.opacity = 255;
+      overlay.destroy();
+      return GLib.SOURCE_REMOVE;
+    });
+  }
+
+  _syncOpenOverlayGeometry(overlay, clone, iconLayer) {
+    const width = this.actor.allocation?.get_width?.() || this.actor.width || 0;
+    const height =
+      this.actor.allocation?.get_height?.() || this.actor.height || 0;
+
+    if (width <= 0 || height <= 0) return;
+
+    const cloneSize = this._getCloneTargetSize(clone);
+
+    overlay.set_position(0, 0);
+    overlay.set_size(width, height);
+    iconLayer.set_position(0, 0);
+    iconLayer.set_size(width, height);
+    clone.set_size(cloneSize.width, cloneSize.height);
+    clone.set_position(
+      Math.round((width - cloneSize.width) / 2),
+      Math.round((height - cloneSize.height) / 2),
+    );
+  }
+
+  _handleOpenFolderButtonPress(event) {
+    const target = event.get_source?.();
+    const state = this._openFolderOverlay;
+
+    if (!state) return Clutter.EVENT_PROPAGATE;
+
+    if (this._isActorOrDescendant(target, state.iconLayer))
+      return Clutter.EVENT_PROPAGATE;
+
+    this._closeOpenFolder(true);
+    return Clutter.EVENT_STOP;
+  }
+
+  _handleOpenFolderCapturedEvent(event) {
+    const type = event.type?.();
+
+    if (type !== Clutter.EventType.BUTTON_PRESS) return Clutter.EVENT_PROPAGATE;
+
+    return this._handleOpenFolderButtonPress(event);
+  }
+
+  _getOpenFolderSize() {
+    const allocationHeight = this.actor.allocation?.get_height?.() ?? 0;
+    const monitor = Main.layoutManager.primaryMonitor;
+    const fallbackHeight = Math.round((monitor?.height ?? 900) * 0.48);
+    const height = Math.max(
+      420,
+      Math.round(allocationHeight * 0.84) || fallbackHeight,
+    );
+
+    return {
+      height,
+      width: Math.round(height * 1.2),
+    };
+  }
+
+  _positionCloneFromFrame(clone, sourceFrame) {
+    const target = this._getCloneSourceTransformFromFrame(clone, sourceFrame);
+
+    clone.set_pivot_point(0.5, 0.5);
+    clone.scale_x = target.scale;
+    clone.scale_y = target.scale;
+    clone.translation_x = target.translationX;
+    clone.translation_y = target.translationY;
+  }
+
+  _getCloneSourceTransformFromFrame(clone, sourceFrame) {
+    const [gridX, gridY] = this.actor.get_transformed_position();
+    const gridWidth = this.actor.allocation?.get_width?.() ?? 1;
+    const gridHeight = this.actor.allocation?.get_height?.() ?? 1;
+    const cloneSize = this._getCloneTargetSize(clone);
+    const scaleX = Math.max(0.08, sourceFrame.width / cloneSize.width);
+    const scaleY = Math.max(0.08, sourceFrame.height / cloneSize.height);
+    const sourceCenterX = sourceFrame.x - gridX + sourceFrame.width / 2;
+    const sourceCenterY = sourceFrame.y - gridY + sourceFrame.height / 2;
+    const targetCenterX = gridWidth / 2;
+    const targetCenterY = gridHeight / 2;
+
+    return {
+      scaleX,
+      scaleY,
+      translationX: sourceCenterX - targetCenterX,
+      translationY: sourceCenterY - targetCenterY,
+    };
+  }
+
+  _syncCloneSurfaceSourceStyle(surfaceLayer, clone, sourceFrame) {
+    const target = this._getCloneSourceTransformFromFrame(clone, sourceFrame);
+    const radiusScale = Math.max(0.08, (target.scaleX + target.scaleY) / 2);
+    const sourceRadius = Math.round(CLOSED_FOLDER_PREVIEW_RADIUS / radiusScale);
+
+    surfaceLayer.set_style(`border-radius: ${sourceRadius}px;`);
+  }
+
+  _capturePageActorStates() {
+    return this._pageActors.map((pageActor) => ({
+      pageActor,
+      visible: pageActor.visible,
+      opacity: pageActor.opacity,
+      scaleX: pageActor.scale_x,
+      scaleY: pageActor.scale_y,
+      translationX: pageActor.translation_x,
+      translationY: pageActor.translation_y,
+    }));
+  }
+
+  _animatePageActorsForFolderOpen(animate) {
+    for (const pageActor of this._pageActors) {
+      pageActor.remove_all_transitions?.();
+      pageActor.set_pivot_point(0.5, 0.5);
+
+      pageActor.ease({
+        opacity: FOLDER_OPEN_GRID_OPACITY,
+        scale_x: FOLDER_OPEN_GRID_SCALE,
+        scale_y: FOLDER_OPEN_GRID_SCALE,
+        duration: animate ? FOLDER_OPEN_ANIMATION_TIME : 0,
+        mode: Clutter.AnimationMode.EASE_OUT_CUBIC,
+      });
+    }
+  }
+
+  _restorePageActors(states, animate) {
+    for (const state of states) {
+      const pageActor = state.pageActor;
+      if (pageActor.is_destroyed?.()) continue;
+
+      pageActor.remove_all_transitions?.();
+      pageActor.visible = state.visible;
+      pageActor.set_pivot_point(0.5, 0.5);
+      pageActor.ease({
+        opacity: state.opacity,
+        scale_x: state.scaleX,
+        scale_y: state.scaleY,
+        translation_x: state.translationX,
+        translation_y: state.translationY,
+        duration: animate ? FOLDER_CLOSE_ANIMATION_TIME : 0,
+        mode: Clutter.AnimationMode.EASE_OUT_CUBIC,
+      });
+    }
+  }
+
+  _createOpenFolderAppGrid(apps, iconLayer, clone) {
+    const grid = new St.BoxLayout({
+      style_class: "originuicc-arranged-folder-open-app-grid",
+      orientation: Clutter.Orientation.VERTICAL,
+      x_align: Clutter.ActorAlign.CENTER,
+      y_align: Clutter.ActorAlign.START,
+    });
+    const scrollView = new St.ScrollView({
+      style_class: "originuicc-arranged-folder-open-scroll-view",
+      hscrollbar_policy: St.PolicyType.NEVER,
+      vscrollbar_policy: St.PolicyType.AUTOMATIC,
+      enable_mouse_scrolling: true,
+      x_expand: true,
+      y_expand: true,
+      child: grid,
+    });
+    scrollView._originuiccOpenClone = clone;
+
+    const icons = [];
+    const columns = 5;
+
+    for (let i = 0; i < apps.length; i += columns) {
+      const row = new St.BoxLayout({
+        style_class: "originuicc-arranged-folder-open-app-row",
+        x_align: Clutter.ActorAlign.CENTER,
+      });
+
+      for (let j = 0; j < columns; j++) {
+        const app = apps[i + j];
+        const slot = app
+          ? this._createOpenFolderSlot()
+          : this._createOpenFolderSpacer();
+
+        slot._originuiccOpenClone = clone;
+        row.add_child(slot);
+        if (app) {
+          const iconActor = this._createOpenFolderFlyingIcon(app, iconLayer);
+          icons.push({ slot, iconActor, scrollView });
+        }
+      }
+
+      grid.add_child(row);
+    }
+
+    return { actor: scrollView, scrollView, icons };
+  }
+
+  _scrollOpenFolder(scrollView, openIcons, event) {
+    const adjustment = scrollView?.vadjustment;
+    if (!adjustment) return Clutter.EVENT_PROPAGATE;
+
+    let delta = 0;
+    const direction = event.get_scroll_direction?.();
+
+    if (direction === Clutter.ScrollDirection.SMOOTH) {
+      const [, dy] = event.get_scroll_delta?.() ?? [0, 0];
+      delta = dy * 72;
+    } else if (
+      direction === Clutter.ScrollDirection.DOWN ||
+      direction === Clutter.ScrollDirection.RIGHT
+    ) {
+      delta = adjustment.step_increment || 72;
+    } else if (
+      direction === Clutter.ScrollDirection.UP ||
+      direction === Clutter.ScrollDirection.LEFT
+    ) {
+      delta = -(adjustment.step_increment || 72);
+    }
+
+    if (delta === 0) return Clutter.EVENT_PROPAGATE;
+
+    const upper = adjustment.upper ?? 0;
+    const pageSize = adjustment.page_size ?? 0;
+    const value = Math.clamp(
+      adjustment.value + delta,
+      0,
+      Math.max(0, upper - pageSize),
+    );
+
+    if (adjustment.set_value) adjustment.set_value(value);
+    else adjustment.value = value;
+
+    this._syncFlyingIconSlots(openIcons);
+    return Clutter.EVENT_STOP;
+  }
+
+  _syncFlyingIconSlots(openIcons) {
+    for (const { slot, iconActor, scrollView } of openIcons) {
+      if (!slot.is_destroyed?.() && !iconActor.is_destroyed?.()) {
+        const targetFrame = this._placeFlyingIconAtSlot(iconActor, slot);
+        this._syncFlyingIconVisibility(iconActor, targetFrame, scrollView);
+      }
+    }
+  }
+
+  _createOpenFolderSlot() {
+    return new St.Widget({
+      style_class: "originuicc-arranged-folder-open-app-slot",
+      reactive: false,
+    });
+  }
+
+  _createOpenFolderFlyingIcon(app, iconLayer) {
+    const icon = _createIconTexture(app, OPEN_FOLDER_ICON_TEXTURE_SIZE);
+    const button = new St.Button({
+      style_class: "originuicc-arranged-folder-open-flying-icon",
+      can_focus: true,
+      child: icon,
+      opacity: 0,
+      reactive: true,
+      x_expand: false,
+      y_expand: false,
+      width: OPEN_FOLDER_ICON_SIZE,
+      height: OPEN_FOLDER_ICON_SIZE,
+    });
+
+    button.connect("clicked", () => {
+      app.activate();
+      Main.overview.hide();
+    });
+    this._addIconHoverAnimation(button, icon);
+    iconLayer.add_child(button);
+    return button;
+  }
+
+  _createOpenFolderSpacer() {
+    return new St.Widget({
+      style_class: "originuicc-arranged-folder-open-app-spacer",
+      reactive: false,
+    });
+  }
+
+  _animateOpenFolderIcons(
+    iconLayer,
+    surfaceLayer,
+    openIcons,
+    sourceIconFrames,
+  ) {
+    GLib.idle_add(GLib.PRIORITY_DEFAULT_IDLE, () => {
+      if (iconLayer.is_destroyed?.() || surfaceLayer.is_destroyed?.())
+        return GLib.SOURCE_REMOVE;
+
+      openIcons.forEach(({ slot, iconActor, scrollView }, index) => {
+        if (iconActor.is_destroyed?.()) return;
+
+        iconActor.remove_all_transitions?.();
+        iconActor.set_pivot_point(0.5, 0.5);
+        const targetFrame = this._placeFlyingIconAtSlot(iconActor, slot);
+        this._syncFlyingIconVisibility(iconActor, targetFrame, scrollView);
+
+        const delay =
+          index < FOLDER_OPEN_VISIBLE_ICON_COUNT
+            ? (index + 1) * FOLDER_OPEN_ICON_DELAY
+            : (FOLDER_OPEN_VISIBLE_ICON_COUNT + 1) * FOLDER_OPEN_ICON_DELAY;
+
+        if (index < sourceIconFrames.length && sourceIconFrames[index]) {
+          const offset = this._getSourceFrameOffset(
+            sourceIconFrames[index],
+            iconActor.get_parent(),
+            targetFrame,
+          );
+          const scale = this._getFrameScale(sourceIconFrames[index], iconActor);
+          iconActor.opacity = 255;
+          iconActor.scale_x = scale;
+          iconActor.scale_y = scale;
+          iconActor.translation_x = offset.x;
+          iconActor.translation_y = offset.y;
+        } else {
+          const offset = this._getSourceFrameOffset(
+            sourceIconFrames[3],
+            iconActor.get_parent(),
+            targetFrame,
+          );
+          const scale = this._getFrameScale(sourceIconFrames[3], iconActor);
+          iconActor.opacity = 255;
+          iconActor.scale_x = scale;
+          iconActor.scale_y = scale;
+          iconActor.translation_x = offset.x;
+          iconActor.translation_y = offset.y;
+        }
+
+        iconActor.ease({
+          opacity: 255,
+          scale_x: 1,
+          scale_y: 1,
+          translation_x: 0,
+          translation_y: 0,
+          delay,
+          duration: FOLDER_OPEN_ANIMATION_TIME,
+          mode: Clutter.AnimationMode.EASE_OUT_CUBIC,
+        });
+      });
+
+      surfaceLayer.ease({
+        opacity: 0,
+        duration: Math.round(FOLDER_OPEN_ANIMATION_TIME / 2),
+        mode: Clutter.AnimationMode.EASE_OUT_CUBIC,
+      });
+
+      return GLib.SOURCE_REMOVE;
+    });
+  }
+
+  _animateCloseFolderIcons(openIcons, surfaceLayer, sourceIconFrames) {
+    if (!surfaceLayer.is_destroyed?.()) {
+      surfaceLayer.show();
+      surfaceLayer.opacity = 0;
+      surfaceLayer.ease({
+        opacity: 255,
+        duration: Math.round(FOLDER_CLOSE_ANIMATION_TIME / 2),
+        mode: Clutter.AnimationMode.EASE_OUT_CUBIC,
+      });
+    }
+
+    openIcons.forEach(({ slot, iconActor, scrollView }, index) => {
+      if (iconActor.is_destroyed?.()) return;
+
+      iconActor.remove_all_transitions?.();
+      const targetFrame = this._placeFlyingIconAtSlot(iconActor, slot);
+      this._syncFlyingIconVisibility(iconActor, targetFrame, scrollView);
+      if (index < sourceIconFrames.length && sourceIconFrames[index])
+        iconActor.visible = true;
+      const delay =
+        index < FOLDER_OPEN_VISIBLE_ICON_COUNT
+          ? (index + 1) * FOLDER_OPEN_ICON_DELAY
+          : (FOLDER_OPEN_VISIBLE_ICON_COUNT + 1) * FOLDER_OPEN_ICON_DELAY;
+
+      if (index < sourceIconFrames.length && sourceIconFrames[index]) {
+        const offset = this._getSourceFrameOffset(
+          sourceIconFrames[index],
+          iconActor.get_parent(),
+          targetFrame,
+        );
+        const scale = this._getFrameScale(sourceIconFrames[index], iconActor);
+        iconActor.ease({
+          opacity: 255,
+          scale_x: scale,
+          scale_y: scale,
+          translation_x: offset.x,
+          translation_y: offset.y,
+          delay,
+          duration: FOLDER_CLOSE_ANIMATION_TIME,
+          mode: Clutter.AnimationMode.EASE_OUT_CUBIC,
+        });
+      } else {
+        const offset = this._getSourceFrameOffset(
+          sourceIconFrames[3],
+          iconActor.get_parent(),
+          targetFrame,
+        );
+        const scale = this._getFrameScale(sourceIconFrames[3], iconActor);
+        iconActor.ease({
+          opacity: 255,
+          scale_x: scale,
+          scale_y: scale,
+          translation_x: offset.x,
+          translation_y: offset.y,
+          delay,
+          duration: FOLDER_CLOSE_ANIMATION_TIME,
+          mode: Clutter.AnimationMode.EASE_OUT_CUBIC,
+        });
+      }
+    });
+  }
+
+  _getPreviewFromSourceActor(sourceActor) {
+    for (let actor = sourceActor; actor; actor = actor.get_parent?.()) {
+      if (actor._previewCells) return actor;
+    }
+
+    return null;
+  }
+
+  _getPreviewSourceActors(previewLayer) {
+    const cells = previewLayer?._previewCells ?? [];
+    const sources = cells.slice(0, 3);
+    const moreCell = cells[3];
+
+    if (moreCell?._miniIconCells) sources.push(...moreCell._miniIconCells);
+    else if (moreCell) sources.push(moreCell);
+
+    return sources.slice(0, FOLDER_OPEN_VISIBLE_ICON_COUNT);
+  }
+
+  _capturePreviewIconStageFrames(previewLayer) {
+    return this._getPreviewSourceActors(previewLayer)
+      .map((actor) => this._getPreviewIconStageFrame(actor))
+      .filter((frame) => frame.width > 0 && frame.height > 0);
+  }
+
+  _getPreviewIconStageFrame(actor) {
+    const child = actor.child ?? actor.get_child?.() ?? null;
+
+    if (child) {
+      const childFrame = this._getActorStageFrame(child);
+
+      if (childFrame.width > 1 && childFrame.height > 1) return childFrame;
+    }
+
+    return this._getActorStageFrame(actor);
+  }
+
+  _getActorStageFrame(actor) {
+    const [x, y] = actor.get_transformed_position();
+    const width = actor.allocation?.get_width?.() || actor.width || 1;
+    const height = actor.allocation?.get_height?.() || actor.height || 1;
+
+    return { x, y, width, height };
+  }
+
+  _placeFlyingIconAtSlot(iconActor, slot) {
+    const parent = iconActor.get_parent();
+    const slotFrame = this._getFinalActorFrameRelativeToLayer(
+      slot,
+      parent,
+      slot._originuiccOpenClone,
+    );
+    const iconWidth =
+      iconActor.allocation?.get_width?.() ||
+      iconActor.width ||
+      OPEN_FOLDER_ICON_SIZE;
+    const iconHeight =
+      iconActor.allocation?.get_height?.() ||
+      iconActor.height ||
+      OPEN_FOLDER_ICON_SIZE;
+    const x = slotFrame.x + (slotFrame.width - iconWidth) / 2;
+    const y = slotFrame.y + (slotFrame.height - iconHeight) / 2;
+
+    iconActor.set_position(Math.round(x), Math.round(y));
+    return { x, y, width: iconWidth, height: iconHeight };
+  }
+
+  _getFinalActorFrameRelativeToLayer(actor, layer, clone) {
+    if (!clone) return this._getActorFrameRelativeTo(actor, layer);
+
+    const cloneFrame = this._getFinalCloneFrameRelativeToLayer(clone, layer);
+    const actorFrame = this._getActorAllocationFrameRelativeToAncestor(
+      actor,
+      clone,
+    );
+
+    return {
+      x: cloneFrame.x + actorFrame.x,
+      y: cloneFrame.y + actorFrame.y,
+      width: actorFrame.width,
+      height: actorFrame.height,
+    };
+  }
+
+  _getFinalCloneFrameRelativeToLayer(clone, layer) {
+    const layerWidth = layer.allocation?.get_width?.() || layer.width || 1;
+    const layerHeight = layer.allocation?.get_height?.() || layer.height || 1;
+    const { width: cloneWidth, height: cloneHeight } =
+      this._getCloneTargetSize(clone);
+
+    return {
+      x: Math.round((layerWidth - cloneWidth) / 2),
+      y: Math.round((layerHeight - cloneHeight) / 2),
+      width: cloneWidth,
+      height: cloneHeight,
+    };
+  }
+
+  _getCloneTargetSize(clone) {
+    return {
+      width:
+        clone._originuiccTargetWidth ||
+        clone.allocation?.get_width?.() ||
+        clone.width ||
+        1,
+      height:
+        clone._originuiccTargetHeight ||
+        clone.allocation?.get_height?.() ||
+        clone.height ||
+        1,
+    };
+  }
+
+  _getActorAllocationFrameRelativeToAncestor(actor, ancestor) {
+    let x = 0;
+    let y = 0;
+    let width = actor.allocation?.get_width?.() || actor.width || 1;
+    let height = actor.allocation?.get_height?.() || actor.height || 1;
+
+    for (
+      let current = actor;
+      current && current !== ancestor;
+      current = current.get_parent?.()
+    ) {
+      const box = current.allocation;
+      let originX = current.x ?? 0;
+      let originY = current.y ?? 0;
+
+      if (box?.get_origin) {
+        const [allocatedX, allocatedY] = box.get_origin();
+        originX = allocatedX;
+        originY = allocatedY;
+      } else if (box) {
+        originX = box.x1 ?? originX;
+        originY = box.y1 ?? originY;
+      }
+
+      x += originX;
+      y += originY;
+    }
+
+    return { x, y, width, height };
+  }
+
+  _getActorFrameRelativeTo(actor, relativeTo) {
+    const [actorX, actorY] = actor.get_transformed_position();
+    const [relativeX, relativeY] = relativeTo.get_transformed_position();
+    const width = actor.allocation?.get_width?.() || actor.width || 1;
+    const height = actor.allocation?.get_height?.() || actor.height || 1;
+
+    return {
+      x: actorX - relativeX,
+      y: actorY - relativeY,
+      width,
+      height,
+    };
+  }
+
+  _syncFlyingIconVisibility(iconActor, targetFrame, scrollView) {
+    if (!scrollView) return true;
+
+    const viewportFrame = this._getFinalActorFrameRelativeToLayer(
+      scrollView,
+      iconActor.get_parent(),
+      scrollView._originuiccOpenClone,
+    );
+    const visible =
+      targetFrame.y + targetFrame.height > viewportFrame.y &&
+      targetFrame.y < viewportFrame.y + viewportFrame.height;
+
+    iconActor.visible = visible;
+    return visible;
+  }
+
+  _getSourceFrameOffset(sourceFrame, relativeTo, targetFrame) {
+    const [relativeX, relativeY] = relativeTo.get_transformed_position();
+    const sourceCenterX = sourceFrame.x - relativeX + sourceFrame.width / 2;
+    const sourceCenterY = sourceFrame.y - relativeY + sourceFrame.height / 2;
+
+    return {
+      x: sourceCenterX - targetFrame.x - targetFrame.width / 2,
+      y: sourceCenterY - targetFrame.y - targetFrame.height / 2,
+    };
+  }
+
+  _getFrameScale(sourceFrame, iconActor) {
+    const iconWidth =
+      iconActor.allocation?.get_width?.() ||
+      iconActor.width ||
+      OPEN_FOLDER_ICON_SIZE;
+    const iconHeight =
+      iconActor.allocation?.get_height?.() ||
+      iconActor.height ||
+      OPEN_FOLDER_ICON_SIZE;
+    const scale = Math.min(
+      sourceFrame.width / iconWidth,
+      sourceFrame.height / iconHeight,
+    );
+
+    return Math.max(0.12, Math.min(1, scale));
+  }
+
+  _isActorOrDescendant(actor, parent) {
+    for (let current = actor; current; current = current.get_parent?.()) {
+      if (current === parent) return true;
+    }
+
+    return false;
+  }
+
+  _syncNavigation() {
+    const hasMultiplePages = this._pages.length > 1;
+
+    this._prevButton.visible = hasMultiplePages && this._currentPage > 0;
+    this._nextButton.visible =
+      hasMultiplePages && this._currentPage < this._pages.length - 1;
+
+    this._pageIndicators.destroy_all_children();
+    this._pageIndicators.set_size(
+      hasMultiplePages
+        ? this._pages.length * ARRANGED_PAGE_INDICATOR_DOT_SIZE +
+            Math.max(0, this._pages.length - 1) *
+              ARRANGED_PAGE_INDICATOR_DOT_SPACING
+        : 1,
+      ARRANGED_PAGE_INDICATOR_DOT_SIZE,
+    );
+
+    if (!hasMultiplePages) {
+      this._syncShellPositions();
+      return;
+    }
+
+    for (let i = 0; i < this._pages.length; i++) {
+      const dot = new St.Button({
+        style_class: "originuicc-arranged-page-dot",
+        reactive: true,
+      });
+
+      if (i === this._currentPage) dot.add_style_pseudo_class("checked");
+
+      dot.connect("clicked", () => this.goToPage(i));
+      this._pageIndicators.add_child(dot);
+    }
+
+    this._syncShellPositions();
+  }
+}
+
+export class OverviewRemake {
+  enable() {
+    this._wallpaperManagers = [];
+    this._wallpaperLayer = null;
+    this._monitorSignalId = 0;
+    this._searchEntryBinSetupId = 0;
+    this._appLibrarySetupId = 0;
+    this._arrangedRebuildId = 0;
+    this._appDisplayState = null;
+    this._appSystemSignalIds = [];
+    this._settingsSignalIds = [];
+
+    this._themeContext = St.ThemeContext.get_for_stage(global.stage);
+    this._scaleFactorSignalId = this._themeContext.connect(
+      "notify::scale-factor",
+      () => this._updateOverviewWallpaperEffects(),
+    );
+
+    this._colorSettings = St.Settings.get();
+    this._colorSchemeSignalId = this._colorSettings.connect(
+      "notify::color-scheme",
+      () => this._syncColorScheme(),
+    );
+
+    this._createOverviewWallpaper();
+    this._bindOverviewWallpaperSignals();
+    this._setupSearchEntryBinClass();
+    this._setupAppLibrarySwitcher();
+    this._syncColorScheme();
+  }
+
+  disable() {
+    if (this._searchEntryBinSetupId) {
+      GLib.source_remove(this._searchEntryBinSetupId);
+      this._searchEntryBinSetupId = 0;
+    }
+
+    if (this._appLibrarySetupId) {
+      GLib.source_remove(this._appLibrarySetupId);
+      this._appLibrarySetupId = 0;
+    }
+
+    if (this._arrangedRebuildId) {
+      GLib.source_remove(this._arrangedRebuildId);
+      this._arrangedRebuildId = 0;
+    }
+
+    this._disconnectAppSignals();
+    this._destroyAppLibrarySwitcher();
+    this._clearSearchEntryBinClass();
+    this._unbindOverviewWallpaperSignals();
+    this._destroyOverviewWallpaper();
+
+    if (this._colorSchemeSignalId && this._colorSettings) {
+      this._colorSettings.disconnect(this._colorSchemeSignalId);
+      this._colorSchemeSignalId = 0;
+    }
+
+    if (this._scaleFactorSignalId && this._themeContext) {
+      this._themeContext.disconnect(this._scaleFactorSignalId);
+      this._scaleFactorSignalId = 0;
+    }
+
+    this._clearColorScheme();
+    this._themeContext = null;
+    this._colorSettings = null;
+  }
+
+  _syncColorScheme() {
+    const actor = Main.layoutManager?.overviewGroup;
+
+    if (!actor) return;
+
+    actor.remove_style_class_name("originuicc-light");
+    actor.remove_style_class_name("originuicc-dark");
+    actor.add_style_class_name(this._getColorSchemeClass());
+  }
+
+  _clearColorScheme() {
+    const actor = Main.layoutManager?.overviewGroup;
+
+    if (!actor) return;
+
+    actor.remove_style_class_name("originuicc-light");
+    actor.remove_style_class_name("originuicc-dark");
+  }
+
+  _getColorSchemeClass() {
+    try {
+      const variant = Main.getStyleVariant?.();
+
+      if (variant === "dark") return "originuicc-dark";
+      if (variant === "light") return "originuicc-light";
+    } catch (_) {}
+
+    return this._colorSettings?.colorScheme === St.SystemColorScheme.PREFER_DARK
+      ? "originuicc-dark"
+      : "originuicc-light";
+  }
+
+  _bindOverviewWallpaperSignals() {
+    this._monitorSignalId = Main.layoutManager.connect(
+      "monitors-changed",
+      () => {
+        this._createOverviewWallpaper();
+      },
+    );
+  }
+
+  _unbindOverviewWallpaperSignals() {
+    if (this._monitorSignalId) {
+      Main.layoutManager.disconnect(this._monitorSignalId);
+      this._monitorSignalId = 0;
+    }
+  }
+
+  _createOverviewWallpaper() {
+    this._clearWallpaperManagers();
+
+    if (!this._wallpaperLayer) {
+      this._wallpaperLayer = new Clutter.Actor({
+        reactive: false,
+        name: "originuicc-overview-wallpaper-layer",
+      });
+
+      Main.layoutManager.overviewGroup.insert_child_at_index(
+        this._wallpaperLayer,
+        0,
+      );
+    }
+
+    this._wallpaperLayer.destroy_all_children();
+
+    for (const [monitorIndex, monitor] of Main.layoutManager.monitors.entries())
+      this._addMonitorWallpaper(monitorIndex, monitor);
+
+    this._updateOverviewWallpaperEffects();
+  }
+
+  _addMonitorWallpaper(monitorIndex, monitor) {
+    const wallpaperActor = new St.Widget({
+      style_class: "originuicc-overview-wallpaper",
+      x: monitor.x,
+      y: monitor.y,
+      width: monitor.width,
+      height: monitor.height,
+      clip_to_allocation: true,
+      reactive: false,
+      effect: new Shell.BlurEffect({
+        name: OVERVIEW_BACKGROUND_BLUR_EFFECT,
+      }),
+    });
+
+    this._wallpaperLayer.add_child(wallpaperActor);
+    this._wallpaperManagers.push(
+      new Background.BackgroundManager({
+        container: wallpaperActor,
+        monitorIndex,
+        controlPosition: false,
+      }),
+    );
+  }
+
+  _updateOverviewWallpaperEffects() {
+    if (!this._wallpaperLayer) return;
+
+    const scaleFactor = this._themeContext?.scale_factor ?? 1;
+
+    for (const wallpaperActor of this._wallpaperLayer) {
+      const effect = wallpaperActor.get_effect(OVERVIEW_BACKGROUND_BLUR_EFFECT);
+
+      effect?.set({
+        brightness: OVERVIEW_BACKGROUND_BLUR_BRIGHTNESS,
+        radius: OVERVIEW_BACKGROUND_BLUR_RADIUS * scaleFactor,
+      });
+    }
+  }
+
+  _clearWallpaperManagers() {
+    for (const manager of this._wallpaperManagers) manager.destroy();
+
+    this._wallpaperManagers = [];
+  }
+
+  _destroyOverviewWallpaper() {
+    this._clearWallpaperManagers();
+
+    if (this._wallpaperLayer) {
+      this._wallpaperLayer.destroy();
+      this._wallpaperLayer = null;
+    }
+  }
+
+  _setupSearchEntryBinClass() {
+    this._syncSearchEntryBinClass();
+
+    this._searchEntryBinSetupId = GLib.timeout_add(
+      GLib.PRIORITY_DEFAULT,
+      1000,
+      () => {
+        this._syncSearchEntryBinClass();
+        return GLib.SOURCE_CONTINUE;
+      },
+    );
+  }
+
+  _getSearchEntryBin() {
+    return Main.overview?._overview?.controls?._searchEntryBin ?? null;
+  }
+
+  _syncSearchEntryBinClass() {
+    this._getSearchEntryBin()?.add_style_class_name(
+      "originuicc-search-entry-bin",
+    );
+  }
+
+  _clearSearchEntryBinClass() {
+    this._getSearchEntryBin()?.remove_style_class_name(
+      "originuicc-search-entry-bin",
+    );
+  }
+
+  _setupAppLibrarySwitcher() {
+    this._syncAppLibrarySwitcher();
+    this._connectAppSignals();
+
+    this._appLibrarySetupId = GLib.timeout_add(
+      GLib.PRIORITY_DEFAULT,
+      1000,
+      () => {
+        this._syncAppLibrarySwitcher();
+        return GLib.SOURCE_CONTINUE;
+      },
+    );
+  }
+
+  _getAppDisplay() {
+    return Main.overview?._overview?.controls?._appDisplay ?? null;
+  }
+
+  _syncAppLibrarySwitcher() {
+    const appDisplay = this._getAppDisplay();
+
+    if (!appDisplay?._box || !appDisplay?._grid || !appDisplay?._pageIndicators)
+      return;
+
+    if (this._appDisplayState?.appDisplay === appDisplay) return;
+
+    this._destroyAppLibrarySwitcher();
+
+    const children = appDisplay._box.get_children();
+    const scrollContainer = children[0] ?? null;
+
+    if (!scrollContainer) return;
+
+    const arrangedGrid = new OriginArrangedAppGrid();
+    const switcher = new OriginSegmentedControl("All", "Arranged", (index) => {
+      this._setAppLibraryTab(index);
+    });
+
+    appDisplay.add_style_class_name("originuicc-app-library-enabled");
+    appDisplay._box.insert_child_at_index(arrangedGrid.actor, 1);
+    appDisplay._box.add_child(switcher.actor);
+
+    this._appDisplayState = {
+      appDisplay,
+      scrollContainer,
+      pageIndicators: appDisplay._pageIndicators,
+      arrangedGrid,
+      switcher,
+      activeTab: APP_LIBRARY_TAB_ALL,
+    };
+
+    this._rebuildArrangedGrid();
+    this._setAppLibraryTab(APP_LIBRARY_TAB_ALL, false);
+  }
+
+  _destroyAppLibrarySwitcher() {
+    const state = this._appDisplayState;
+
+    if (!state) return;
+
+    try {
+      state.scrollContainer.visible = true;
+      state.pageIndicators.visible = true;
+      state.appDisplay.remove_style_class_name(
+        "originuicc-app-library-enabled",
+      );
+    } catch (_) {}
+
+    try {
+      state.arrangedGrid.destroy();
+      state.switcher.destroy();
+    } catch (_) {}
+
+    this._appDisplayState = null;
+  }
+
+  _setAppLibraryTab(tabIndex, animate = true) {
+    const state = this._appDisplayState;
+
+    if (!state) return;
+
+    state.activeTab = tabIndex;
+    state.switcher.setActive(tabIndex, animate);
+
+    const arranged = tabIndex === APP_LIBRARY_TAB_ARRANGED;
+    state.scrollContainer.visible = !arranged;
+    state.pageIndicators.visible = !arranged;
+    state.arrangedGrid.actor.visible = arranged;
+
+    if (arranged) this._rebuildArrangedGrid();
+  }
+
+  _connectAppSignals() {
+    const appSystem = Shell.AppSystem.get_default();
+
+    this._appSystemSignalIds.push(
+      appSystem.connect("installed-changed", () =>
+        this._queueArrangedGridRebuild(),
+      ),
+    );
+
+    this._settingsSignalIds.push(
+      global.settings.connect("changed::favorite-apps", () =>
+        this._queueArrangedGridRebuild(),
+      ),
+    );
+    this._settingsSignalIds.push(
+      global.settings.connect("changed::app-picker-layout", () =>
+        this._queueArrangedGridRebuild(),
+      ),
+    );
+  }
+
+  _disconnectAppSignals() {
+    const appSystem = Shell.AppSystem.get_default();
+
+    for (const signalId of this._appSystemSignalIds) {
+      try {
+        appSystem.disconnect(signalId);
+      } catch (_) {}
+    }
+
+    for (const signalId of this._settingsSignalIds) {
+      try {
+        global.settings.disconnect(signalId);
+      } catch (_) {}
+    }
+
+    this._appSystemSignalIds = [];
+    this._settingsSignalIds = [];
+  }
+
+  _queueArrangedGridRebuild() {
+    if (this._arrangedRebuildId) GLib.source_remove(this._arrangedRebuildId);
+
+    this._arrangedRebuildId = GLib.timeout_add(
+      GLib.PRIORITY_DEFAULT,
+      ARRANGED_REBUILD_DELAY,
+      () => {
+        this._arrangedRebuildId = 0;
+        this._rebuildArrangedGrid();
+        return GLib.SOURCE_REMOVE;
+      },
+    );
+  }
+
+  _rebuildArrangedGrid() {
+    const state = this._appDisplayState;
+
+    if (!state) return;
+
+    state.arrangedGrid.rebuild(this._collectInstalledApps());
+  }
+
+  _collectInstalledApps() {
+    const appSystem = Shell.AppSystem.get_default();
+
+    return appSystem
+      .get_installed()
+      .map((appInfo) => {
+        try {
+          const id = appInfo.get_id();
+
+          if (!appInfo.should_show?.()) return null;
+
+          const app = appSystem.lookup_app(id);
+
+          return app ? { app, appInfo } : null;
+        } catch (_) {
+          return null;
+        }
+      })
+      .filter((record) => record !== null)
+      .sort((a, b) => a.app.get_name().localeCompare(b.app.get_name()));
+  }
+}

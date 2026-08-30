@@ -1,7 +1,7 @@
-PRETTY_NAME="OriginUI(sedona-edamame)"
-NAME="OriginUi"
-VERSION_ID="26"
-VERSION="26 (sedona)"
-VERSION_CODENAME=sedona
+PRETTY_NAME="InfinityOS(sunshine)"
+NAME="InfinityOS"
+VERSION_ID="1"
+VERSION="1 (sunshine)"
+VERSION_CODENAME=sunshine
 DEBIAN_VERSION_FULL=13.3
-ID=sedona
+ID=sunshine

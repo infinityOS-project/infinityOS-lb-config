@@ -1,0 +1,25 @@
+[org.gnome.desktop.interface]
+icon-theme='Radience'
+
+[org.gnome.shell]
+enabled-extensions=['blur-my-shell@aunetx', 'dash-to-dock@micxgx.gmail.com', 'OriginUICC@quandz24.extension', 'OriginUIPrivateMode@quandz24.extension', 'user-theme@gnome-shell-extensions.gcampax.github.com']
+disable-user-extensions=false
+
+[org.gnome.desktop.background]
+picture-uri='file:///usr/share/backgrounds/sunshine/main.png'
+picture-uri-dark='file:///usr/share/backgrounds/sunshine/main.png'
+picture-options='zoom'
+
+[org.gnome.desktop.screensaver]
+picture-uri='file:///usr/share/backgrounds/sunshine/main.png'
+
+[org.gnome.desktop.wm.preferences]
+button-layout='appmenu:minimize,maximize,close'
+
+[org.gnome.shell.extensions.dash-to-dock]
+apply-custom-theme=false
+background-opacity=0.80000000000000004
+dash-max-icon-size=56
+dock-fixed=true
+dock-position='BOTTOM'
+height-fraction=0.90000000000000002

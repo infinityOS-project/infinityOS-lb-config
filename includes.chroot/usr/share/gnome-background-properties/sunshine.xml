@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE wallpapers SYSTEM "gnome-wp-list.dtd">
+<wallpapers>
+  <wallpaper deleted="false">
+    <name>Bright Future</name>
+    <filename>/usr/share/backgrounds/sunshine/brightFuture.png</filename>
+    <options>zoom</options>
+  </wallpaper>
+  <wallpaper deleted="false">
+    <name>Infinity Light</name>
+    <filename>/usr/share/backgrounds/sunshine/InfinityLight.png</filename>
+    <options>zoom</options>
+  </wallpaper>
+  <wallpaper deleted="false">
+    <name>Infinity Dark</name>
+    <filename>/usr/share/backgrounds/sunshine/InfinityDark.png</filename>
+    <options>zoom</options>
+  </wallpaper>
+  <wallpaper deleted="false">
+    <name>Second</name>
+    <filename>/usr/share/backgrounds/sunshine/second.png</filename>
+    <options>zoom</options>
+  </wallpaper>
+  <wallpaper deleted="false">
+    <name>Third</name>
+    <filename>/usr/share/backgrounds/sunshine/third.png</filename>
+    <options>zoom</options>
+  </wallpaper>
+  <wallpaper deleted="false">
+    <name>Fourth</name>
+    <filename>/usr/share/backgrounds/sunshine/fourth.png</filename>
+    <options>zoom</options>
+  </wallpaper>
+  <wallpaper deleted="false">
+    <name>Main</name>
+    <filename>/usr/share/backgrounds/sunshine/main.png</filename>
+    <options>zoom</options>
+  </wallpaper>
+</wallpapers>

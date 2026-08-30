@@ -1,0 +1,540 @@
+/*
+ * OriginUICC Overview styles.
+ *
+ * Scope rule:
+ * - Every selector starts with `#overviewGroup.originuicc-light` or
+ *   `#overviewGroup.originuicc-dark`.
+ * - Do not style shared shell classes globally; overview folder dialogs reuse
+ *   generic classes such as `.icon-button`.
+ * - Folder overview surfaces intentionally do not use box-shadow.
+ * - `backdrop-filter: blur(...)` only works after installing the patched GNOME Shell.
+ */
+
+/* Light-mode folder icon and opened folder dialog surfaces. */
+
+#overviewGroup.originuicc-light
+  .overview-tile.app-folder
+  .overview-icon
+  > StBoxLayout
+  > StBin
+  > StWidget,
+#overviewGroup.originuicc-light .app-folder-dialog {
+  background: rgba(255, 255, 255, 0.55) !important;
+  backdrop-filter: blur(26px) brightness(1) !important;
+  color: black !important;
+  border: none !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.4) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.4) !important;
+  box-shadow: none !important;
+}
+
+/* Dark-mode folder icon and opened folder dialog surfaces. */
+#overviewGroup.originuicc-dark
+  .overview-tile.app-folder
+  .overview-icon
+  > StBoxLayout
+  > StBin
+  > StWidget,
+#overviewGroup.originuicc-dark .app-folder-dialog {
+  background: rgba(0, 0, 0, 0.55) !important;
+  backdrop-filter: blur(26px) brightness(1) !important;
+  color: white !important;
+  border: none !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.4) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.4) !important;
+  box-shadow: none !important;
+}
+
+/* App-folder tile shape in overview. */
+#overviewGroup.originuicc-light .overview-tile.app-folder,
+#overviewGroup.originuicc-dark .overview-tile.app-folder {
+  border-radius: 24px !important;
+}
+
+/* Keep hover/focus/checked states glassy instead of gray. */
+#overviewGroup.originuicc-light .overview-tile:hover,
+#overviewGroup.originuicc-light .overview-tile:focus,
+#overviewGroup.originuicc-light .overview-tile:checked,
+#overviewGroup.originuicc-light .overview-tile.app-folder:hover,
+#overviewGroup.originuicc-light .overview-tile.app-folder:focus,
+#overviewGroup.originuicc-light .overview-tile.app-folder:checked {
+  background: rgba(255, 255, 255, 0.55) !important;
+}
+
+#overviewGroup.originuicc-dark .overview-tile:hover,
+#overviewGroup.originuicc-dark .overview-tile:focus,
+#overviewGroup.originuicc-dark .overview-tile:checked,
+#overviewGroup.originuicc-dark .overview-tile.app-folder:hover,
+#overviewGroup.originuicc-dark .overview-tile.app-folder:focus,
+#overviewGroup.originuicc-dark .overview-tile.app-folder:checked {
+  background: rgba(0, 0, 0, 0.55) !important;
+}
+
+/* The folder preview icon is content, not another glass layer. */
+#overviewGroup.originuicc-light .overview-tile.app-folder .overview-icon,
+#overviewGroup.originuicc-dark .overview-tile.app-folder .overview-icon {
+  background: transparent !important;
+}
+
+/* Folder labels and editable title text. */
+#overviewGroup.originuicc-light .overview-tile.app-folder StLabel,
+#overviewGroup.originuicc-light .app-folder-dialog StLabel,
+#overviewGroup.originuicc-light .app-folder-dialog .folder-name-label,
+#overviewGroup.originuicc-light .app-folder-dialog .folder-name-entry {
+  color: black !important;
+}
+
+#overviewGroup.originuicc-dark .overview-tile.app-folder StLabel,
+#overviewGroup.originuicc-dark .app-folder-dialog StLabel,
+#overviewGroup.originuicc-dark .app-folder-dialog .folder-name-label,
+#overviewGroup.originuicc-dark .app-folder-dialog .folder-name-entry {
+  color: white !important;
+}
+
+/* Opened folder dialog shell. */
+#overviewGroup.originuicc-light .app-folder-dialog,
+#overviewGroup.originuicc-dark .app-folder-dialog {
+  border-radius: 60px !important;
+  box-shadow: none !important;
+}
+
+#overviewGroup.originuicc-light
+  .overview-tile.app-folder
+  .overview-icon
+  > StBoxLayout
+  > StBin
+  > StWidget,
+#overviewGroup.originuicc-dark
+  .overview-tile.app-folder
+  .overview-icon
+  > StBoxLayout
+  > StBin
+  > StWidget {
+  padding: 10px !important;
+  border-radius: 999px !important;
+  box-shadow: none !important;
+}
+#overviewGroup
+  .overview-tile.app-folder
+  .overview-icon
+  > StBoxLayout
+  > StBin
+  > StWidget
+  > StBin
+  StIcon {
+  icon-size: 28px !important;
+  width: 28px !important;
+  height: 28px !important;
+}
+
+/* Folder title row remains transparent inside the dialog surface. */
+#overviewGroup.originuicc-light .app-folder-dialog .folder-name-container,
+#overviewGroup.originuicc-dark .app-folder-dialog .folder-name-container {
+  background: transparent !important;
+}
+
+/* Edit-name button inside the folder dialog; scoped to overview only. */
+#overviewGroup.originuicc-light .app-folder-dialog .icon-button {
+  background: rgba(255, 255, 255, 0.55) !important;
+  backdrop-filter: blur(26px) brightness(1) !important;
+  border-radius: 999px !important;
+  color: black !important;
+  border: none !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.7) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.7) !important;
+  box-shadow: none !important;
+}
+
+#overviewGroup.originuicc-dark .app-folder-dialog .icon-button {
+  background: rgba(0, 0, 0, 0.55) !important;
+  backdrop-filter: blur(26px) brightness(1) !important;
+  border-radius: 999px !important;
+  color: white !important;
+  border: none !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.4) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.4) !important;
+  box-shadow: none !important;
+}
+#overviewGroup.originuicc-light .overview-tile.app-folder .overview-icon,
+#overviewGroup.originuicc-dark .overview-tile.app-folder .overview-icon,
+#overviewGroup.originuicc-light .overview-tile.app-folder,
+#overviewGroup.originuicc-dark .overview-tile.app-folder {
+  border: none !important;
+  background-color: transparent !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+/* Overview search surfaces. */
+#overviewGroup.originuicc-light .search-entry,
+#overviewGroup.originuicc-light .search-section-content {
+  background: rgba(255, 255, 255, 0.55) !important;
+  backdrop-filter: blur(26px) brightness(1) !important;
+  color: black !important;
+  border: none !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.7) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.7) !important;
+  box-shadow: none !important;
+}
+
+#overviewGroup.originuicc-dark .search-entry,
+#overviewGroup.originuicc-dark .search-section-content {
+  background: rgba(0, 0, 0, 0.55) !important;
+  backdrop-filter: blur(26px) brightness(1) !important;
+  color: white !important;
+  border: none !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.4) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.4) !important;
+  box-shadow: none !important;
+}
+
+#overviewGroup.originuicc-light .search-entry,
+#overviewGroup.originuicc-light .originuicc-search-entry-bin {
+  border-radius: 999px !important;
+}
+
+#overviewGroup.originuicc-dark .search-entry,
+#overviewGroup.originuicc-dark .originuicc-search-entry-bin {
+  border-radius: 999px !important;
+}
+
+#overviewGroup.originuicc-light .search-section-content,
+#overviewGroup.originuicc-dark .search-section-content {
+  border-radius: 24px !important;
+}
+
+#overviewGroup.originuicc-light .search-entry:focus,
+#overviewGroup.originuicc-light .search-entry:hover {
+  background: rgba(255, 255, 255, 0.55) !important;
+}
+
+#overviewGroup.originuicc-dark .search-entry:focus,
+#overviewGroup.originuicc-dark .search-entry:hover {
+  background: rgba(0, 0, 0, 0.55) !important;
+}
+
+#overviewGroup.originuicc-light .search-entry .search-entry-icon,
+#overviewGroup.originuicc-light .search-section-content StLabel {
+  color: black !important;
+}
+
+#overviewGroup.originuicc-dark .search-entry .search-entry-icon,
+#overviewGroup.originuicc-dark .search-section-content StLabel {
+  color: white !important;
+}
+
+/* OriginUICC App Library switch and arranged grid. */
+#overviewGroup .originuicc-app-library-switch {
+  width: 288px;
+  height: 44px;
+  margin-top: 10px;
+  margin-bottom: 10px;
+  padding: 4px;
+  border-radius: 999px;
+}
+
+#overviewGroup.originuicc-light .originuicc-app-library-switch {
+  background: rgba(255, 255, 255, 0.45);
+  backdrop-filter: blur(26px) brightness(1);
+  border-top: 1px solid rgba(255, 255, 255, 0.7);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.55);
+}
+
+#overviewGroup.originuicc-dark .originuicc-app-library-switch {
+  background: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(26px) brightness(1);
+  border-top: 1px solid rgba(255, 255, 255, 0.28);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.16);
+}
+
+#overviewGroup .originuicc-app-library-switch-indicator-track {
+  width: 280px;
+  height: 36px;
+}
+
+#overviewGroup .originuicc-app-library-switch-indicator {
+  width: 140px;
+  height: 36px;
+  border-radius: 999px;
+}
+
+#overviewGroup.originuicc-light .originuicc-app-library-switch-indicator {
+  background: rgba(255, 255, 255, 0.78);
+}
+
+#overviewGroup.originuicc-dark .originuicc-app-library-switch-indicator {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+#overviewGroup .originuicc-app-library-switch-tabs {
+  width: 280px;
+  height: 36px;
+  spacing: 0;
+}
+
+#overviewGroup .originuicc-app-library-switch-tab {
+  width: 140px;
+  height: 36px;
+  border-radius: 999px;
+  background: transparent;
+  box-shadow: none;
+  font-weight: 700;
+  font-size: 12px;
+  padding: 0;
+}
+
+#overviewGroup.originuicc-light .originuicc-app-library-switch-tab {
+  color: rgba(0, 0, 0, 0.58);
+}
+
+#overviewGroup.originuicc-dark .originuicc-app-library-switch-tab {
+  color: rgba(255, 255, 255, 0.64);
+}
+
+#overviewGroup.originuicc-light .originuicc-app-library-switch-tab:checked {
+  color: black;
+}
+
+#overviewGroup.originuicc-dark .originuicc-app-library-switch-tab:checked {
+  color: white;
+}
+
+#overviewGroup .originuicc-arranged-app-grid {
+  padding: 0;
+}
+
+#overviewGroup .originuicc-arranged-page-bin {
+  padding: 0;
+}
+
+#overviewGroup .originuicc-arranged-page {
+  spacing: 34px;
+}
+
+#overviewGroup .originuicc-arranged-folder-row {
+  spacing: 36px;
+}
+
+#overviewGroup .originuicc-arranged-folder,
+#overviewGroup .originuicc-arranged-folder-spacer {
+  width: 152px;
+  height: 160px;
+}
+
+#overviewGroup .originuicc-arranged-folder {
+  spacing: 10px;
+}
+
+#overviewGroup .originuicc-arranged-folder-preview-button {
+  width: 132px;
+  height: 132px;
+  padding: 0;
+  background: transparent;
+  box-shadow: none;
+  border-radius: 30px;
+}
+
+#overviewGroup .originuicc-arranged-folder-preview {
+  width: 132px;
+  height: 132px;
+  padding: 0;
+  border-radius: 30px;
+}
+
+#overviewGroup.originuicc-light .originuicc-arranged-folder-preview {
+  background: rgba(255, 255, 255, 0.58);
+  backdrop-filter: blur(26px) brightness(1);
+  border-top: 1px solid rgba(255, 255, 255, 0.72);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.38);
+}
+
+#overviewGroup.originuicc-dark .originuicc-arranged-folder-preview {
+  background: rgba(255, 255, 255, 0.18);
+  backdrop-filter: blur(26px) brightness(1);
+  border-top: 1px solid rgba(255, 255, 255, 0.28);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+#overviewGroup .originuicc-arranged-preview-row {
+  spacing: 8px;
+}
+
+#overviewGroup .originuicc-arranged-app-cell {
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  padding: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+#overviewGroup .originuicc-arranged-app-cell:hover,
+#overviewGroup .originuicc-arranged-app-cell:focus {
+  background: transparent;
+}
+
+#overviewGroup .originuicc-arranged-empty-cell {
+  background: transparent;
+}
+
+#overviewGroup .originuicc-arranged-more-cell {
+  padding: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+#overviewGroup .originuicc-arranged-more-content {
+  padding: 0;
+}
+
+#overviewGroup .originuicc-arranged-more-icon {
+  width: 22px;
+  height: 22px;
+  padding: 0;
+}
+
+#overviewGroup .originuicc-arranged-folder-label {
+  font-weight: 700;
+  font-size: 12px;
+  text-align: center;
+}
+
+#overviewGroup .originuicc-arranged-folder-label StLabel,
+#overviewGroup .originuicc-arranged-folder-label {
+  text-align: center;
+}
+
+.originuicc-arranged-folder-label {
+  color: white;
+}
+
+#overviewGroup .originuicc-arranged-nav-layer {
+  padding: 0;
+}
+
+#overviewGroup .originuicc-arranged-nav-button {
+  width: 52px;
+  height: 52px;
+  padding: 0;
+  margin: 0;
+  border-radius: 999px;
+  box-shadow: none;
+}
+
+#overviewGroup .originuicc-arranged-nav-button StIcon {
+  icon-size: 24px;
+  width: 24px;
+  height: 24px;
+}
+
+#overviewGroup.originuicc-light .originuicc-arranged-nav-button {
+  background: rgba(255, 255, 255, 0.58);
+}
+
+#overviewGroup.originuicc-dark .originuicc-arranged-nav-button {
+  background: rgba(255, 255, 255, 0.18);
+}
+.originuicc-arranged-nav-button {
+  color: white;
+}
+
+#overviewGroup .originuicc-arranged-page-indicators {
+  spacing: 9px;
+  margin: 0;
+}
+
+#overviewGroup .originuicc-arranged-page-dot {
+  width: 7px;
+  height: 7px;
+  padding: 0;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.38);
+  box-shadow: none;
+}
+
+#overviewGroup .originuicc-arranged-page-dot:checked {
+  background: rgba(255, 255, 255, 0.95);
+}
+
+#overviewGroup .originuicc-arranged-folder-open-overlay {
+  background: transparent;
+}
+
+#overviewGroup .originuicc-arranged-folder-open-clone {
+  border-radius: 30px;
+  padding: 0;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+}
+
+#overviewGroup .originuicc-arranged-folder-open-surface {
+  border-radius: 30px;
+  box-shadow: none;
+}
+
+#overviewGroup.originuicc-light .originuicc-arranged-folder-open-surface {
+  background: rgba(255, 255, 255, 0.58);
+  backdrop-filter: blur(26px) brightness(1);
+  border-top: 1px solid rgba(255, 255, 255, 0.72);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.38);
+}
+
+#overviewGroup.originuicc-dark .originuicc-arranged-folder-open-surface {
+  background: rgba(255, 255, 255, 0.18);
+  backdrop-filter: blur(26px) brightness(1);
+  border-top: 1px solid rgba(255, 255, 255, 0.28);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+#overviewGroup .originuicc-arranged-folder-open-icon-layer {
+  background: transparent;
+}
+
+#overviewGroup .originuicc-arranged-folder-open-content {
+  spacing: 18px;
+  padding: 26px;
+}
+
+#overviewGroup .originuicc-arranged-folder-open-title {
+  font-size: 22px;
+  font-weight: 800;
+}
+
+.originuicc-arranged-folder-open-title,
+.originuicc-arranged-folder-open-app-label {
+  color: white;
+}
+
+#overviewGroup .originuicc-arranged-folder-open-scroll-view {
+  height: 330px;
+  padding: 0 0px 0 10px;
+}
+
+#overviewGroup .originuicc-arranged-folder-open-app-grid {
+  spacing: 18px;
+}
+
+#overviewGroup .originuicc-arranged-folder-open-app-row {
+  spacing: 20px;
+}
+
+#overviewGroup .originuicc-arranged-folder-open-app-slot,
+#overviewGroup .originuicc-arranged-folder-open-app-spacer {
+  width: 104px;
+  height: 104px;
+}
+
+#overviewGroup .originuicc-arranged-folder-open-flying-icon {
+  width: 104px;
+  height: 104px;
+  padding: 0;
+  border-radius: 22px;
+  background: transparent;
+  box-shadow: none;
+}
+
+#overviewGroup .originuicc-arranged-folder-open-flying-icon:hover,
+#overviewGroup .originuicc-arranged-folder-open-flying-icon:focus {
+  background: transparent;
+}

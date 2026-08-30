@@ -1,0 +1,8 @@
+[Plymouth Theme]
+Name=Sunshine
+Description=A splash logo for Sunshine
+ModuleName=script
+
+[script]
+ImageDir=/usr/share/plymouth/themes/sunshine
+ScriptFile=/usr/share/plymouth/themes/sunshine/sunshine.script

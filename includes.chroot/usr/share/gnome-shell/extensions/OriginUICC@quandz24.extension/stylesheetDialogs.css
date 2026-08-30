@@ -1,0 +1,166 @@
+/*
+ * OriginUICC GNOME Shell dialog styles.
+ *
+ * Scope rule:
+ * - Modal dialogs live under `#modalDialogGroup`; keep normal dialog styling
+ *   scoped there so it cannot bleed into Quick Settings, overview, or menus.
+ * - `close-dialog` is created on the window actor instead of modalDialogGroup,
+ *   so it has one narrow fallback selector.
+ * - Only the dialog surface uses `backdrop-filter`; inner buttons and entries
+ *   use glass borders without extra blur to keep shell repaint cost lower.
+ */
+
+/* Main liquid glass dialog surfaces. */
+#modalDialogGroup.originuicc-light .modal-dialog,
+.modal-dialog.close-dialog {
+  background: rgba(255, 255, 255, 0.6) !important;
+  backdrop-filter: blur(26px) brightness(1) !important;
+  padding: 24px !important;
+  border-radius: 44px !important;
+  border: none !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.7) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.7) !important;
+  box-shadow: none !important;
+  color: black !important;
+}
+
+#modalDialogGroup.originuicc-dark .modal-dialog {
+  background: rgba(0, 0, 0, 0.6) !important;
+  backdrop-filter: blur(26px) brightness(1) !important;
+  padding: 24px !important;
+  border-radius: 44px !important;
+  border: none !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.4) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.4) !important;
+  box-shadow: none !important;
+  color: white !important;
+}
+
+/* Content boxes stay structural, not extra glass layers. */
+#modalDialogGroup.originuicc-light .modal-dialog-content-box,
+#modalDialogGroup.originuicc-dark .modal-dialog-content-box,
+#modalDialogGroup.originuicc-light .modal-dialog-button-box,
+#modalDialogGroup.originuicc-dark .modal-dialog-button-box {
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+/* Dialog text. */
+#modalDialogGroup.originuicc-light .modal-dialog StLabel,
+#modalDialogGroup.originuicc-light .message-dialog-title,
+#modalDialogGroup.originuicc-light .message-dialog-description,
+#modalDialogGroup.originuicc-light .dialog-list-title,
+#modalDialogGroup.originuicc-light .dialog-list-item-title,
+#modalDialogGroup.originuicc-light .dialog-list-item-description,
+#modalDialogGroup.originuicc-light .run-dialog-description,
+#modalDialogGroup.originuicc-light .prompt-dialog-info-label,
+#modalDialogGroup.originuicc-light .prompt-dialog-null-label {
+  color: black !important;
+}
+
+#modalDialogGroup.originuicc-dark .modal-dialog StLabel,
+#modalDialogGroup.originuicc-dark .message-dialog-title,
+#modalDialogGroup.originuicc-dark .message-dialog-description,
+#modalDialogGroup.originuicc-dark .dialog-list-title,
+#modalDialogGroup.originuicc-dark .dialog-list-item-title,
+#modalDialogGroup.originuicc-dark .dialog-list-item-description,
+#modalDialogGroup.originuicc-dark .run-dialog-description,
+#modalDialogGroup.originuicc-dark .prompt-dialog-info-label,
+#modalDialogGroup.originuicc-dark .prompt-dialog-null-label {
+  color: white !important;
+}
+
+/* Warning/error labels keep a clear status color. */
+#modalDialogGroup .prompt-dialog-error-label,
+#modalDialogGroup .polkit-dialog-user-root-label,
+#modalDialogGroup .end-session-dialog-battery-warning,
+#modalDialogGroup .end-session-dialog .dialog-list-title {
+  color: #ff453a !important;
+}
+
+/* Dialog action buttons. */
+#modalDialogGroup.originuicc-light .modal-dialog-button,
+.modal-dialog.close-dialog .modal-dialog-button {
+  background: rgba(255, 255, 255, 1) !important;
+  border-radius: 20px !important;
+  border: none !important;
+  box-shadow: none !important;
+  color: black !important;
+}
+
+#modalDialogGroup.originuicc-dark .modal-dialog-button {
+  background: rgba(36, 36, 36, 1) !important;
+  border-radius: 20px !important;
+  border: none !important;
+  box-shadow: none !important;
+  color: white !important;
+}
+
+#modalDialogGroup.originuicc-light .modal-dialog-button:hover,
+.modal-dialog.close-dialog .modal-dialog-button:hover {
+  background: rgba(255, 255, 255, 0.4) !important;
+}
+
+#modalDialogGroup.originuicc-dark .modal-dialog-button:hover {
+  background: rgba(36, 36, 36, 0.4) !important;
+}
+
+#modalDialogGroup.originuicc-light .modal-dialog-button:default,
+#modalDialogGroup.originuicc-light .modal-dialog-button:checked,
+#modalDialogGroup.originuicc-dark .modal-dialog-button:default,
+#modalDialogGroup.originuicc-dark .modal-dialog-button:checked,
+.modal-dialog.close-dialog .modal-dialog-button:default,
+.modal-dialog.close-dialog .modal-dialog-button:checked {
+  background: rgba(10, 132, 255, 0.62) !important;
+  color: white !important;
+}
+
+/* Run/password entries. */
+#modalDialogGroup.originuicc-light .run-dialog-entry,
+#modalDialogGroup.originuicc-light .prompt-dialog-password-entry {
+  background: rgba(255, 255, 255, 1) !important;
+  border-radius: 20px !important;
+  border: none !important;
+  box-shadow: none !important;
+  color: black !important;
+  selected-color: white !important;
+  selection-background-color: rgba(10, 132, 255, 0.72) !important;
+}
+
+#modalDialogGroup.originuicc-dark .run-dialog-entry,
+#modalDialogGroup.originuicc-dark .prompt-dialog-password-entry {
+  background: rgba(36, 36, 36, 0.4) !important;
+  border-radius: 20px !important;
+  border: none !important;
+  box-shadow: none !important;
+  color: white !important;
+  selected-color: white !important;
+  selection-background-color: rgba(10, 132, 255, 0.72) !important;
+}
+
+/* List rows and audio-device chooser tiles inside dialogs. */
+#modalDialogGroup.originuicc-light .dialog-list-item,
+#modalDialogGroup.originuicc-light .audio-selection-device {
+  background: rgba(255, 255, 255, 1) !important;
+  border-radius: 20px !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+#modalDialogGroup.originuicc-dark .dialog-list-item,
+#modalDialogGroup.originuicc-dark .audio-selection-device {
+  background: rgba(36, 36, 36, 1) !important;
+  border-radius: 20px !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+#modalDialogGroup.originuicc-light .dialog-list-item:hover,
+#modalDialogGroup.originuicc-light .audio-selection-device:hover {
+  background: rgba(255, 255, 255, 1) !important;
+}
+
+#modalDialogGroup.originuicc-dark .dialog-list-item:hover,
+#modalDialogGroup.originuicc-dark .audio-selection-device:hover {
+  background: rgba(36, 36, 36, 1) !important;
+}

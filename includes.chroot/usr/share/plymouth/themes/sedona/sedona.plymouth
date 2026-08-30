@@ -1,8 +1,0 @@
-[Plymouth Theme]
-Name=Sedona
-Description=A splash logo for Sedona
-ModuleName=script
-
-[script]
-ImageDir=/usr/share/plymouth/themes/sedona
-ScriptFile=/usr/share/plymouth/themes/sedona/sedona.script

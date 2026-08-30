@@ -1,0 +1,261 @@
+/*
+ * OriginUICC Quick Settings styles.
+ *
+ * Scope rule:
+ * - Main Quick Settings selectors must start with `.quick-settings`.
+ * - Arrow submenu selectors must start with `.quick-toggle-menu-container`.
+ * - Do not style generic classes such as `.icon-button`, `.slider`, or
+ *   `.separator` without a Quick Settings parent; GNOME reuses those classes
+ *   in overview dialogs and other shell surfaces.
+ * - `backdrop-filter: blur(...)` only works after installing the patched GNOME Shell.
+ */
+
+/* Quick Settings panel surface. */
+.quick-settings {
+  padding: 12px !important;
+  border-radius: 30px !important;
+  background: rgba(255, 255, 255, 0) !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+/* Only used when JS makes BoxPointer transparent for QS backdrop work. */
+.popup-menu-boxpointer.originuicc-transparent-boxpointer {
+  -arrow-background-color: rgba(0, 0, 0, 0) !important;
+  -arrow-border-width: 0px !important;
+}
+
+/* Grid spacing between QS rows and columns. */
+.quick-settings .quick-settings-grid {
+  spacing-rows: 10px;
+  spacing-columns: 10px;
+}
+
+/* Liquid glass tiles: normal toggles and split menu toggles. */
+.quick-settings .quick-toggle,
+.quick-settings .quick-menu-toggle {
+  min-height: 58px !important;
+  background: rgba(255, 255, 255, 0.55) !important;
+  backdrop-filter: blur(26px) brightness(1) !important;
+  box-shadow: rgba(0, 0, 0, 0.4) 0px 0px 21px 15px;
+  border: none !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.7) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.7) !important;
+  color: white !important;
+  transition: background-color 200ms ease;
+}
+
+/* Hover states stay glassy instead of switching to GNOME defaults. */
+.quick-settings .quick-toggle:hover,
+.quick-settings .quick-menu-toggle:hover,
+.quick-settings .quick-toggle-has-menu:hover {
+  background: rgba(255, 255, 255, 0.4) !important;
+}
+
+/* Accent color for enabled tiles. */
+.quick-settings .quick-toggle:checked StIcon,
+.quick-settings .quick-menu-toggle:checked StIcon,
+.quick-settings .quick-toggle:checked StLabel,
+.quick-settings .quick-menu-toggle:checked StLabel,
+.quick-settings .quick-toggle:checked .quick-toggle-arrow,
+.quick-settings .quick-menu-toggle:checked .quick-toggle-arrow {
+  color: #0a84ff !important;
+}
+
+/* Split-toggle arrow button; scoped to QS because `.icon-button` is shared. */
+.quick-settings .quick-toggle-arrow-button {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: rgba(0, 0, 0, 0.4) 0px 0px 21px 15px;
+  min-width: 28px !important;
+  padding-right: 12px !important;
+}
+
+/* Hide GNOME's split toggle separators inside QS only. */
+.quick-settings .quick-toggle-separator,
+.quick-settings .separator {
+  opacity: 0 !important;
+}
+
+/* Arrow icon inside split toggles. */
+.quick-settings .quick-toggle-arrow {
+  icon-size: 14px;
+  color: rgba(255, 255, 255, 0.8) !important;
+  box-shadow: rgba(0, 0, 0, 0.4) 0px 0px 21px 15px;
+}
+
+/* Tile icons and labels. */
+.quick-settings .quick-toggle StIcon,
+.quick-settings .quick-menu-toggle StIcon {
+  icon-size: 18px;
+  color: white !important;
+  border-radius: 999px !important;
+}
+
+.quick-settings .quick-toggle StLabel,
+.quick-settings .quick-menu-toggle StLabel {
+  font-weight: 600 !important;
+  color: white !important;
+}
+
+/* Arrow submenu opened from Wi-Fi/Bluetooth/etc. */
+.quick-settings .quick-toggle-menu,
+.quick-toggle-menu-container .quick-toggle-menu {
+  background: rgba(255, 255, 255, 0.55) !important;
+  backdrop-filter: blur(26px) brightness(1) !important;
+  border-radius: 24px !important;
+  border: none !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.7) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.7) !important;
+  box-shadow: rgba(0, 0, 0, 0.4) 0px 0px 21px 15px;
+}
+
+/* Liquid glass slider cards. */
+.quick-settings .quick-slider {
+  border-radius: 24px !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.7) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.7) !important;
+  padding: 10px 14px !important;
+  background: rgba(255, 255, 255, 0.55) !important;
+  backdrop-filter: blur(26px) brightness(1) !important;
+  box-shadow: rgba(0, 0, 0, 0.4) 0px 0px 21px 15px;
+}
+
+/* Slider internals are not separate glass surfaces. */
+.quick-settings .quick-slider .quick-toggle-menu,
+.quick-settings .quick-slider .icon-button {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+.quick-settings .slider {
+  height: 20px !important;
+}
+
+/* QS system/power row buttons. */
+.quick-settings .icon-button {
+  background: rgba(255, 255, 255, 0.55) !important;
+  backdrop-filter: blur(26px) brightness(1) !important;
+  box-shadow: rgba(0, 0, 0, 0.4) 0px 0px 21px 15px;
+  border-top: 1px solid rgba(255, 255, 255, 0.7) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.7) !important;
+}
+
+/* Remove the default split look from QS menu toggles. */
+.quick-settings .quick-menu-toggle > StBoxLayout {
+  spacing: 0 !important;
+}
+
+.quick-settings .quick-menu-toggle .quick-toggle-arrow-button {
+  margin-left: -6px !important;
+}
+
+/* Light-mode colors for QS and its arrow submenus. */
+.quick-settings.originuicc-light .quick-toggle,
+.quick-settings.originuicc-light .quick-menu-toggle,
+.quick-settings.originuicc-light .quick-slider,
+.quick-settings.originuicc-light .icon-button,
+.quick-settings.originuicc-light .quick-toggle:hover,
+.quick-settings.originuicc-light .quick-menu-toggle:hover,
+.quick-settings.originuicc-light .quick-slider:hover,
+.quick-settings.originuicc-light .icon-button:hover,
+.quick-settings.originuicc-light .quick-toggle-menu,
+.quick-toggle-menu-container .quick-toggle-menu.originuicc-light {
+  background: rgba(255, 255, 255, 0.4) !important;
+  color: black !important;
+}
+
+.quick-settings.originuicc-light .quick-toggle StIcon,
+.quick-settings.originuicc-light .quick-menu-toggle StIcon,
+.quick-settings.originuicc-light .quick-toggle StLabel,
+.quick-settings.originuicc-light .quick-menu-toggle StLabel,
+.quick-settings.originuicc-light .quick-toggle-arrow,
+.quick-toggle-menu-container .quick-toggle-menu.originuicc-light StLabel,
+.quick-toggle-menu-container .quick-toggle-menu.originuicc-light StIcon {
+  color: black !important;
+}
+
+/* Dark-mode colors for QS and its arrow submenus. */
+.quick-settings.originuicc-dark .quick-toggle,
+.quick-settings.originuicc-dark .quick-menu-toggle,
+.quick-settings.originuicc-dark .quick-slider,
+.quick-settings.originuicc-dark .icon-button,
+.quick-settings.originuicc-dark .quick-toggle:hover,
+.quick-settings.originuicc-dark .quick-menu-toggle:hover,
+.quick-settings.originuicc-dark .quick-slider:hover,
+.quick-settings.originuicc-dark .icon-button:hover,
+.quick-settings.originuicc-dark .quick-toggle-menu,
+.quick-toggle-menu-container .quick-toggle-menu.originuicc-dark {
+  background: rgba(0, 0, 0, 0.4) !important;
+  color: white !important;
+}
+
+/* Checked QS tiles use the accent background. Split toggles need the inner
+ * toggle and menu button because GNOME binds `checked` to those actors too. */
+.quick-settings.originuicc-light .quick-toggle:checked,
+.quick-settings.originuicc-light .quick-toggle-has-menu:checked,
+.quick-settings.originuicc-light .quick-toggle-has-menu .quick-toggle:checked,
+.quick-settings.originuicc-light .quick-toggle-menu-button:checked,
+.quick-settings.originuicc-dark .quick-toggle:checked,
+.quick-settings.originuicc-dark .quick-toggle-has-menu:checked,
+.quick-settings.originuicc-dark .quick-toggle-has-menu .quick-toggle:checked,
+.quick-settings.originuicc-dark .quick-toggle-menu-button:checked {
+  background: rgba(10, 132, 255, 0.6) !important;
+  color: white !important;
+}
+
+.quick-settings.originuicc-dark .quick-toggle StIcon,
+.quick-settings.originuicc-dark .quick-menu-toggle StIcon,
+.quick-settings.originuicc-dark .quick-toggle StLabel,
+.quick-settings.originuicc-dark .quick-menu-toggle StLabel,
+.quick-settings.originuicc-dark .quick-toggle-arrow,
+.quick-toggle-menu-container .quick-toggle-menu.originuicc-dark StLabel,
+.quick-toggle-menu-container .quick-toggle-menu.originuicc-dark StIcon {
+  color: white !important;
+}
+
+/* Checked QS state keeps readable content on the accent background. */
+.quick-settings.originuicc-light .quick-toggle:checked StIcon,
+.quick-settings.originuicc-light .quick-menu-toggle:checked StIcon,
+.quick-settings.originuicc-light .quick-toggle-menu-button:checked StIcon,
+.quick-settings.originuicc-light .quick-toggle:checked StLabel,
+.quick-settings.originuicc-light .quick-menu-toggle:checked StLabel,
+.quick-settings.originuicc-light .quick-toggle:checked .quick-toggle-arrow,
+.quick-settings.originuicc-light .quick-menu-toggle:checked .quick-toggle-arrow,
+.quick-settings.originuicc-dark .quick-toggle:checked StIcon,
+.quick-settings.originuicc-dark .quick-menu-toggle:checked StIcon,
+.quick-settings.originuicc-dark .quick-toggle-menu-button:checked StIcon,
+.quick-settings.originuicc-dark .quick-toggle:checked StLabel,
+.quick-settings.originuicc-dark .quick-menu-toggle:checked StLabel,
+.quick-settings.originuicc-dark .quick-toggle:checked .quick-toggle-arrow,
+.quick-settings.originuicc-dark .quick-menu-toggle:checked .quick-toggle-arrow {
+  color: white !important;
+}
+
+.quick-settings.originuicc-light .quick-slider .icon-button,
+.quick-settings.originuicc-dark .quick-slider .icon-button {
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+/* Dash-to-Panel main panel backdrop surface. */
+#panel.dashtopanelMainPanel.originuicc-light,
+.dashtopanelMainPanel.panel.originuicc-light {
+  background: rgba(255, 255, 255, 0.55) !important;
+  backdrop-filter: blur(26px) brightness(1) !important;
+  border: none !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.7) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.7) !important;
+  box-shadow: none !important;
+}
+
+#panel.dashtopanelMainPanel.originuicc-dark,
+.dashtopanelMainPanel.panel.originuicc-dark {
+  background: rgba(0, 0, 0, 0.21) !important;
+  backdrop-filter: blur(26px) brightness(1) !important;
+  border: none !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.7) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.7) !important;
+  box-shadow: none !important;
+}
