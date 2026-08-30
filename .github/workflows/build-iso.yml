@@ -20,7 +20,7 @@ jobs:
       - name: Install live-build and dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y debootstrap xorriso wget
+          sudo apt-get install -y debootstrap xorriso wget debian-archive-keyring
           LB_DEB_URL=$(curl -s http://deb.debian.org/debian/pool/main/l/live-build/ | grep -oP 'live-build_[^"]+_all\.deb' | sort -V | tail -n1)
           wget "http://deb.debian.org/debian/pool/main/l/live-build/${LB_DEB_URL}"
           sudo apt-get install -y "./${LB_DEB_URL}"
