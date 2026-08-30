@@ -1,0 +1,69 @@
+name: Build and Release ISO
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo into config/
+        uses: actions/checkout@v4
+        with:
+          path: build/config
+
+      - name: Install live-build and dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y live-build debootstrap xorriso
+
+      - name: Configure live-build
+        working-directory: build
+        run: |
+          sudo lb config \
+            --distribution trixie \
+            --archive-areas "main contrib non-free non-free-firmware" \
+            --architectures amd64 \
+            --binary-images iso-hybrid \
+            --bootloaders "syslinux,grub-efi" \
+            --debian-installer live \
+            --bootappend-live "boot=live components quiet splash" \
+            --mirror-bootstrap http://deb.debian.org/debian/ \
+            --mirror-binary http://deb.debian.org/debian/
+
+      - name: Run live-build
+        working-directory: build
+        run: |
+          sudo lb clean --purge
+          sudo lb build
+
+      - name: Locate built ISO
+        id: find_iso
+        run: |
+          ISO_PATH=$(find build -maxdepth 2 -iname "*.iso" | head -n 1)
+          if [ -z "$ISO_PATH" ]; then
+            echo "No ISO found after build" >&2
+            exit 1
+          fi
+          echo "iso_path=$ISO_PATH" >> "$GITHUB_OUTPUT"
+          echo "iso_name=$(basename "$ISO_PATH")" >> "$GITHUB_OUTPUT"
+
+      - name: Generate SHA256 checksum
+        id: checksum
+        run: |
+          cd "$(dirname "${{ steps.find_iso.outputs.iso_path }}")"
+          sha256sum "${{ steps.find_iso.outputs.iso_name }}" > "${{ steps.find_iso.outputs.iso_name }}.sha256"
+          echo "checksum_path=$(pwd)/${{ steps.find_iso.outputs.iso_name }}.sha256" >> "$GITHUB_OUTPUT"
+
+      - name: Create GitHub Release with ISO and checksum
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            ${{ steps.find_iso.outputs.iso_path }}
+            ${{ steps.checksum.outputs.checksum_path }}
+          generate_release_notes: true
