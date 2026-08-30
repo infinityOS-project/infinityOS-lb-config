@@ -43,7 +43,7 @@ jobs:
       - name: Run live-build
         working-directory: build
         run: |
-          sudo lb clean --purge
+          sudo lb clean
           sudo lb build
 
       - name: Locate built ISO
