@@ -1,0 +1,573 @@
+/*
+ * OriginUICC Date & Time Menu styles.
+ *
+ * Scope rule:
+ * - Selectors are scoped to `.originuicc-datemenu` and its boxpointer.
+ * - Backdrop blur requires the patched GNOME Shell.
+ */
+
+/* =========================================================================
+ * 1. Popover Container & BoxPointer (Transparent base + Black blur surface)
+ * ========================================================================= */
+
+/* Make default GNOME Shell BoxPointer completely transparent */
+.popup-menu-boxpointer.originuicc-transparent-boxpointer {
+  -arrow-background-color: rgba(0, 0, 0, 0) !important;
+  -arrow-border-width: 0px !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+/* Base DateMenu popover surface */
+.datemenu-popover.originuicc-datemenu {
+  padding: 14px !important;
+  border-radius: 32px !important;
+  border: none !important;
+  /* box-shadow: rgba(0, 0, 0, 0.3) 0px 0px 26px 0px !important; */
+  box-shadow: rgba(0, 0, 0, 0) 0px 0px 0px 0px !important;
+  background: rgba(255, 255, 255, 0) !important;
+  background-color: rgba(255, 255, 255, 0) !important;
+  transition: background-color 200ms ease;
+}
+
+/* Dark mode: Black blur background surface */
+.datemenu-popover.originuicc-datemenu,
+.datemenu-popover.originuicc-datemenu.originuicc-dark {
+  color: white !important;
+}
+
+/* Light mode: Glass background surface */
+.datemenu-popover.originuicc-datemenu.originuicc-light {
+  color: black !important;
+}
+
+/* Calendar & notification area layout wrapper */
+.originuicc-datemenu #calendarArea {
+  padding: 0px !important;
+  spacing: 12px !important;
+}
+
+/* Shell.BlurEffect in BACKGROUND mode needs a transparent paint surface. */
+.originuicc-background-blur {
+  background: transparent !important;
+  background-color: transparent !important;
+  background-image: none !important;
+}
+
+/* =========================================================================
+ * 2. Two Distinct Background Cards (Notifications & Calendar/Date sections)
+ * ========================================================================= */
+
+/* --- Section 1: Notifications Area (Message List) --- */
+.originuicc-datemenu .message-list,
+.originuicc-datemenu .originuicc-datemenu-notifications-section {
+  border-radius: 24px !important;
+  padding: 14px !important;
+  margin: 0px !important;
+  min-width: 29em;
+  border: none !important;
+  transition: background-color 200ms ease;
+}
+
+/* Remove default vertical separator border & align padding */
+.originuicc-datemenu .message-list:ltr,
+.originuicc-datemenu .message-list:rtl {
+  border: none !important;
+  border-right-width: 0px !important;
+  border-left-width: 0px !important;
+  margin-right: 0px !important;
+  margin-left: 0px !important;
+  padding: 14px !important;
+}
+
+/* Reset inner container paddings to ensure exact alignment with notification card */
+.originuicc-datemenu .message-list > StBoxLayout,
+.originuicc-datemenu .message-view,
+.originuicc-datemenu .message-list StScrollView,
+.originuicc-datemenu .message-list-scrollview {
+  padding: 0px !important;
+  margin: 0px !important;
+  border: none !important;
+}
+
+/* Notifications background card - Dark mode */
+.originuicc-datemenu.originuicc-dark .message-list,
+.originuicc-datemenu.originuicc-dark .originuicc-datemenu-notifications-section,
+.originuicc-datemenu .message-list.originuicc-dark,
+.originuicc-datemenu
+  .originuicc-datemenu-notifications-section.originuicc-dark {
+  background: rgba(27, 27, 27, 0.8) !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.35) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.3) !important;
+  box-shadow: rgba(0, 0, 0, 0.25) 0px 4px 16px !important;
+  color: white !important;
+}
+
+/* Notifications background card - Light mode */
+.originuicc-datemenu.originuicc-light .message-list,
+.originuicc-datemenu.originuicc-light
+  .originuicc-datemenu-notifications-section,
+.originuicc-datemenu .message-list.originuicc-light,
+.originuicc-datemenu
+  .originuicc-datemenu-notifications-section.originuicc-light {
+  background: rgba(255, 255, 255, 0.45) !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.9) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.5) !important;
+  box-shadow: rgba(0, 0, 0, 0.08) 0px 4px 16px !important;
+  color: black !important;
+}
+
+/* --- Section 2: Date & Calendar Area --- */
+.originuicc-datemenu .datemenu-calendar-column,
+.originuicc-datemenu .originuicc-datemenu-calendar-section {
+  border-radius: 24px !important;
+  padding: 14px !important;
+  margin: 0px !important;
+  border: none !important;
+  spacing: 8px !important;
+  transition: background-color 200ms ease;
+}
+
+.originuicc-datemenu .datemenu-calendar-column:ltr,
+.originuicc-datemenu .datemenu-calendar-column:rtl {
+  margin-left: 0px !important;
+  margin-right: 0px !important;
+}
+
+/* Calendar background card - Dark mode */
+.originuicc-datemenu.originuicc-dark .datemenu-calendar-column,
+.originuicc-datemenu.originuicc-dark .originuicc-datemenu-calendar-section,
+.originuicc-datemenu .datemenu-calendar-column.originuicc-dark,
+.originuicc-datemenu .originuicc-datemenu-calendar-section.originuicc-dark {
+  background: rgba(27, 27, 27, 0.8) !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.35) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.3) !important;
+  box-shadow: rgba(0, 0, 0, 0.25) 0px 4px 16px !important;
+  color: white !important;
+}
+
+/* Calendar background card - Light mode */
+.originuicc-datemenu.originuicc-light .datemenu-calendar-column,
+.originuicc-datemenu.originuicc-light .originuicc-datemenu-calendar-section,
+.originuicc-datemenu .datemenu-calendar-column.originuicc-light,
+.originuicc-datemenu .originuicc-datemenu-calendar-section.originuicc-light {
+  background: rgba(255, 255, 255, 0.45) !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.9) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.5) !important;
+  box-shadow: rgba(0, 0, 0, 0.08) 0px 4px 16px !important;
+  color: black !important;
+}
+
+/* =========================================================================
+ * 3. Liquid Glass Buttons (Matching QuickSettings Styling)
+ * ========================================================================= */
+
+/* --- Today Button --- */
+.originuicc-datemenu .datemenu-today-button {
+  border-radius: 18px !important;
+  padding: 10px 14px !important;
+  margin-bottom: 8px !important;
+  border: none !important;
+  transition: background-color 200ms ease;
+}
+
+.originuicc-datemenu.originuicc-dark .datemenu-today-button,
+.originuicc-datemenu .datemenu-today-button {
+  background: rgba(14, 14, 14, 0.8) !important;
+  /* box-shadow: rgba(0, 0, 0, 0.25) 0px 2px 8px !important; */
+  color: white !important;
+}
+
+.originuicc-datemenu.originuicc-dark .datemenu-today-button:hover,
+.originuicc-datemenu .datemenu-today-button:hover {
+  background: rgba(27, 27, 27, 0.8) !important;
+}
+
+.originuicc-datemenu.originuicc-light .datemenu-today-button {
+  background: rgba(255, 255, 255, 0.55) !important;
+  /* box-shadow: rgba(0, 0, 0, 0.08) 0px 2px 8px !important; */
+  color: black !important;
+}
+
+.originuicc-datemenu.originuicc-light .datemenu-today-button:hover {
+  background: rgba(255, 255, 255, 0.75) !important;
+}
+
+.originuicc-datemenu .datemenu-today-button .day-label {
+  font-weight: 700 !important;
+  font-size: 0.95em !important;
+}
+
+.originuicc-datemenu .datemenu-today-button .date-label {
+  font-weight: 800 !important;
+  font-size: 1.35em !important;
+}
+
+/* --- Calendar Container & Header --- */
+.originuicc-datemenu .calendar {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0px !important;
+  margin: 0px !important;
+}
+
+.originuicc-datemenu .calendar .calendar-month-header {
+  padding-bottom: 6px !important;
+}
+
+.originuicc-datemenu .calendar .calendar-month-label {
+  font-weight: 700 !important;
+  font-size: 1.05em !important;
+  background: transparent !important;
+}
+
+.originuicc-datemenu.originuicc-dark .calendar .calendar-month-label {
+  color: white !important;
+}
+
+.originuicc-datemenu.originuicc-light .calendar .calendar-month-label {
+  color: black !important;
+}
+
+/* Month Navigation Pager Buttons (< >) */
+.originuicc-datemenu .calendar .pager-button {
+  border-radius: 999px !important;
+  border: none !important;
+  width: 32px !important;
+  height: 32px !important;
+  transition: background-color 200ms ease;
+}
+
+.originuicc-datemenu.originuicc-dark .calendar .pager-button {
+  background: rgba(14, 14, 14, 0.8) !important;
+  color: white !important;
+}
+
+.originuicc-datemenu.originuicc-dark .calendar .pager-button:hover {
+  background: rgba(27, 27, 27, 0.8) !important;
+}
+
+.originuicc-datemenu.originuicc-light .calendar .pager-button {
+  background: rgba(255, 255, 255, 0.55) !important;
+  color: black !important;
+}
+
+.originuicc-datemenu.originuicc-light .calendar .pager-button:hover {
+  background: rgba(255, 255, 255, 0.75) !important;
+}
+
+/* Weekday column headers */
+.originuicc-datemenu .calendar .calendar-day-heading {
+  font-weight: 700 !important;
+  font-size: 0.85em !important;
+  padding-bottom: 4px !important;
+}
+
+.originuicc-datemenu.originuicc-dark .calendar .calendar-day-heading {
+  color: rgba(255, 255, 255, 1) !important;
+}
+
+.originuicc-datemenu.originuicc-light .calendar .calendar-day-heading {
+  color: rgba(0, 0, 0, 1) !important;
+}
+
+/* --- Calendar Day Buttons --- */
+.originuicc-datemenu .calendar .calendar-day {
+  border-radius: 999px !important;
+  border: none !important;
+  margin: 2px !important;
+  transition:
+    background-color 150ms ease,
+    color 150ms ease;
+}
+
+.originuicc-datemenu.originuicc-dark .calendar .calendar-day {
+  color: rgba(255, 255, 255, 1);
+}
+
+.originuicc-datemenu.originuicc-light .calendar .calendar-day {
+  color: rgba(0, 0, 0, 1);
+}
+
+.originuicc-datemenu.originuicc-dark .calendar .calendar-day.calendar-weekend {
+  color: rgba(255, 255, 255, 1);
+}
+
+.originuicc-datemenu.originuicc-light .calendar .calendar-day.calendar-weekend {
+  color: rgba(0, 0, 0, 1);
+}
+
+.originuicc-datemenu.originuicc-dark
+  .calendar
+  .calendar-day.calendar-other-month {
+  color: rgba(255, 255, 255, 1);
+}
+
+.originuicc-datemenu.originuicc-light
+  .calendar
+  .calendar-day.calendar-other-month {
+  color: rgba(0, 0, 0, 1);
+}
+
+.originuicc-datemenu.originuicc-dark .calendar .calendar-day:hover {
+  background: rgba(27, 27, 27, 0.8) !important;
+  color: white !important;
+}
+
+.originuicc-datemenu.originuicc-light .calendar .calendar-day:hover {
+  background: rgba(0, 0, 0, 0.1) !important;
+  color: black !important;
+}
+
+/* Selected Day & Today: Liquid glass accent tile */
+.originuicc-datemenu .calendar .calendar-day:selected,
+.originuicc-datemenu .calendar .calendar-day.calendar-today {
+  background: rgba(10, 132, 255, 0.7) !important;
+  box-shadow: 0px 0px 12px rgba(10, 132, 255, 0.5) !important;
+  color: white !important;
+  font-weight: bold !important;
+}
+
+/* --- Section Buttons (Events, World Clocks, Weather) --- */
+.originuicc-datemenu .datemenu-displays-section {
+  padding-top: 4px;
+}
+
+.originuicc-datemenu .events-button,
+.originuicc-datemenu .world-clocks-button,
+.originuicc-datemenu .weather-button {
+  border-radius: 18px !important;
+  padding: 12px 14px !important;
+  margin: 4px 0px !important;
+  border: none !important;
+  transition: background-color 200ms ease;
+}
+
+.originuicc-datemenu.originuicc-dark .events-button,
+.originuicc-datemenu.originuicc-dark .world-clocks-button,
+.originuicc-datemenu.originuicc-dark .weather-button {
+  background: rgba(14, 14, 14, 0.8) !important;
+  /* box-shadow: rgba(0, 0, 0, 0.25) 0px 2px 8px !important; */
+  color: white !important;
+}
+
+.originuicc-datemenu.originuicc-dark .events-button:hover,
+.originuicc-datemenu.originuicc-dark .world-clocks-button:hover,
+.originuicc-datemenu.originuicc-dark .weather-button:hover {
+  background: rgba(14, 14, 14, 0.8) !important;
+}
+
+.originuicc-datemenu.originuicc-light .events-button,
+.originuicc-datemenu.originuicc-light .world-clocks-button,
+.originuicc-datemenu.originuicc-light .weather-button {
+  background: rgba(255, 255, 255, 0.55) !important;
+  /* box-shadow: rgba(0, 0, 0, 0.08) 0px 2px 8px !important; */
+  color: black !important;
+}
+
+.originuicc-datemenu.originuicc-light .events-button:hover,
+.originuicc-datemenu.originuicc-light .world-clocks-button:hover,
+.originuicc-datemenu.originuicc-light .weather-button:hover {
+  background: rgba(255, 255, 255, 0.75) !important;
+}
+
+/* Titles inside section buttons */
+.originuicc-datemenu .events-title,
+.originuicc-datemenu .world-clocks-header,
+.originuicc-datemenu .weather-header {
+  font-weight: 700 !important;
+  font-size: 1.05em !important;
+}
+
+/* =========================================================================
+ * 4. Notification Items & Control Buttons (Liquid Glass)
+ * ========================================================================= */
+
+/* Grouped notifications container & header */
+.originuicc-datemenu .message-notification-group {
+  margin: 0px 0px 8px 0px !important;
+  padding: 0px !important;
+}
+
+.originuicc-datemenu .message-group-header {
+  padding: 4px 2px 8px 2px !important;
+  margin: 0px !important;
+}
+
+.originuicc-datemenu .message-group-title {
+  font-weight: 700 !important;
+  font-size: 0.95em !important;
+}
+
+/* Individual message card with matching liquid glass border & padding */
+.originuicc-datemenu .message {
+  border-radius: 18px !important;
+  padding: 12px 14px !important;
+  margin: 0px 0px 8px 0px !important;
+  transition:
+    background-color 200ms ease,
+    border-color 200ms ease;
+}
+
+.originuicc-datemenu.originuicc-dark .message,
+.originuicc-datemenu .message.originuicc-dark {
+  background: rgba(14, 14, 14, 1) !important;
+  border: 1px solid rgba(255, 255, 255, 0.4) !important;
+  color: white !important;
+}
+
+.originuicc-datemenu.originuicc-dark .message:hover,
+.originuicc-datemenu .message.originuicc-dark:hover {
+  background: rgba(37, 37, 37, 1) !important;
+}
+
+.originuicc-datemenu.originuicc-light .message,
+.originuicc-datemenu .message.originuicc-light {
+  background: rgb(222, 222, 222) !important;
+  border: 1px solid rgba(255, 255, 255, 0.6) !important;
+  color: black !important;
+}
+
+.originuicc-datemenu.originuicc-light .message:hover,
+.originuicc-datemenu .message.originuicc-light:hover {
+  background: rgb(219, 219, 219) !important;
+  border-top: 1px solid rgba(255, 255, 255, 1) !important;
+}
+
+/* Message inner layout padding & margin alignment */
+.originuicc-datemenu .message-header {
+  padding: 0px 0px 6px 0px !important;
+  margin: 0px !important;
+}
+
+.originuicc-datemenu .message-box {
+  padding: 0px !important;
+  margin: 0px !important;
+  spacing: 10px !important;
+}
+
+.originuicc-datemenu .message-content {
+  padding: 0px !important;
+  margin: 0px !important;
+  spacing: 2px !important;
+}
+
+.originuicc-datemenu .message-title {
+  font-weight: 700 !important;
+}
+
+.originuicc-datemenu .message-body {
+  font-size: 0.9em !important;
+}
+
+/* Do Not Disturb & Clear Buttons controls row */
+.originuicc-datemenu .message-list-controls {
+  padding: 10px 0px 0px 0px !important;
+  margin: 0px !important;
+  spacing: 10px !important;
+}
+
+.originuicc-datemenu .message-list-controls .dnd-button,
+.originuicc-datemenu .message-list-clear-button {
+  border-radius: 999px !important;
+  border: none !important;
+  padding: 7px 16px !important;
+  transition: background-color 200ms ease;
+}
+
+.originuicc-datemenu.originuicc-dark .message-list-controls .dnd-button {
+  background: rgba(255, 255, 255, 0) !important;
+  padding: 0px 0px !important;
+}
+.originuicc-datemenu.originuicc-dark .message-list-clear-button {
+  background: rgba(56, 56, 56, 0.8) !important;
+  color: white !important;
+}
+
+/* .originuicc-datemenu.originuicc-dark .message-list-controls .dnd-button:hover,
+.originuicc-datemenu.originuicc-dark .message-list-clear-button:hover {
+  background: rgba(255, 255, 255, 0.22) !important;
+} */
+/* 
+/* DND checked state: Accent glass */
+/* .originuicc-datemenu.originuicc-dark .message-list-controls .dnd-button:checked,
+.originuicc-datemenu.originuicc-light .message-list-controls .dnd-button:checked {
+  background: rgba(10, 132, 255, 0.7) !important;
+  box-shadow: 0px 0px 10px rgba(10, 132, 255, 0.5) !important;
+  color: white !important;
+} */
+*/
+
+/* .originuicc-datemenu.originuicc-light .message-list-controls .dnd-button, */
+.originuicc-datemenu.originuicc-light .message-list-clear-button {
+  background: rgba(255, 255, 255, 0.55) !important;
+  color: black !important;
+}
+
+/* .originuicc-datemenu.originuicc-light .message-list-controls .dnd-button:hover, */
+.originuicc-datemenu.originuicc-light .message-list-clear-button:hover {
+  background: rgba(255, 255, 255, 0.75) !important;
+}
+
+/* Mini action buttons inside notifications */
+.originuicc-datemenu .message-close-button,
+.originuicc-datemenu .message-collapse-button,
+.originuicc-datemenu .notification-button,
+.originuicc-datemenu .message-media-control {
+  border-radius: 999px !important;
+  border: none !important;
+  transition: background-color 200ms ease;
+}
+
+.originuicc-datemenu .message-media-control {
+  background: rgba(14, 14, 14, 0) !important;
+  color: white !important;
+}
+.originuicc-datemenu.originuicc-dark .message-close-button,
+.originuicc-datemenu.originuicc-dark .message-collapse-button,
+.originuicc-datemenu.originuicc-dark .notification-button {
+  background: rgba(14, 14, 14, 0.8) !important;
+  color: white !important;
+}
+
+.originuicc-datemenu.originuicc-dark .message-close-button:hover,
+.originuicc-datemenu.originuicc-dark .message-collapse-button:hover,
+.originuicc-datemenu.originuicc-dark .notification-button:hover,
+.originuicc-datemenu.originuicc-dark .message-media-control:hover {
+  background: rgba(255, 255, 255, 0.28) !important;
+}
+
+.originuicc-datemenu.originuicc-light .message-close-button,
+.originuicc-datemenu.originuicc-light .message-collapse-button,
+.originuicc-datemenu.originuicc-light .notification-button {
+  background: rgba(0, 0, 0, 0.08) !important;
+  color: black !important;
+}
+
+.originuicc-datemenu.originuicc-light .message-close-button:hover,
+.originuicc-datemenu.originuicc-light .message-collapse-button:hover,
+.originuicc-datemenu.originuicc-light .notification-button:hover,
+.originuicc-datemenu.originuicc-light .message-media-control:hover {
+  background: rgba(0, 0, 0, 0.16) !important;
+}
+
+/* Empty notifications placeholder */
+.originuicc-datemenu .message-list .message-list-placeholder {
+  font-weight: 700;
+  font-size: 1.2em;
+  padding: 24px 12px !important;
+  margin: 0px !important;
+}
+
+.originuicc-datemenu .message-list .message-list-placeholder StIcon {
+  margin-bottom: 10px !important;
+}
+
+.originuicc-datemenu.originuicc-dark .message-list .message-list-placeholder {
+  color: rgba(255, 255, 255, 1) !important;
+}
+
+.originuicc-datemenu.originuicc-light .message-list .message-list-placeholder {
+  color: rgba(0, 0, 0, 1) !important;
+}

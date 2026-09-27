@@ -6,11 +6,15 @@ import { Extension } from "resource:///org/gnome/shell/extensions/extension.js";
 import { QuickSettingsRemake } from "./remakeQS.js";
 import { OverviewRemake } from "./remakeOverview.js";
 import { DialogsRemake } from "./remakeDialogs.js";
+import { DateMenuRemake } from "./remakeDateMenu.js";
+import { NotificationBannerRemake } from "./remakeNotificationBanner.js";
 
 const EXTRA_STYLESHEETS = [
   "stylesheetQS.css",
   "stylesheetOverview.css",
   "stylesheetDialogs.css",
+  "styleSheetDateMenu.css",
+  "styleSheetNotificationBanner.css",
 ];
 
 export default class OriginUICC extends Extension {
@@ -20,6 +24,8 @@ export default class OriginUICC extends Extension {
       new QuickSettingsRemake(this),
       new OverviewRemake(),
       new DialogsRemake(),
+      new DateMenuRemake(this),
+      new NotificationBannerRemake(),
     ];
 
     this._loadStylesheets();

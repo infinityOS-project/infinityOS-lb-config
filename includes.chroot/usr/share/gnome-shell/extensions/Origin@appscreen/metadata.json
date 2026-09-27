@@ -1,0 +1,7 @@
+{
+  "uuid": "Origin@appscreen",
+  "name": "Origin manager | minimize/unminimize windows animation",
+  "description": "Origin manager",
+  "shell-version": ["50", "48"],
+  "stylesheet": "stylesheet.css"
+}

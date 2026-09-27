@@ -110,8 +110,8 @@
   > StBoxLayout
   > StBin
   > StWidget {
-  padding: 10px !important;
-  border-radius: 999px !important;
+  padding: 4px !important;
+  border-radius: 25px !important;
   box-shadow: none !important;
 }
 #overviewGroup
@@ -507,29 +507,34 @@
 }
 
 #overviewGroup .originuicc-arranged-folder-open-scroll-view {
-  height: 330px;
-  padding: 0 0px 0 10px;
+  /* Scroll view container */
+  padding: 0 12px 0 12px;
 }
 
 #overviewGroup .originuicc-arranged-folder-open-app-grid {
-  spacing: 18px;
+  spacing: 14px;
+  padding-top: 40px;
+  padding-bottom: 40px;
+  margin-right: 24px;
 }
 
 #overviewGroup .originuicc-arranged-folder-open-app-row {
-  spacing: 20px;
+  spacing: 16px;
 }
 
 #overviewGroup .originuicc-arranged-folder-open-app-slot,
 #overviewGroup .originuicc-arranged-folder-open-app-spacer {
-  width: 104px;
-  height: 104px;
+  /* Dimensions set dynamically by JS metrics */
+}
+
+/* Transparent placeholder that reserves icon area inside the slot */
+#overviewGroup .originuicc-arranged-folder-open-app-icon-ph {
+  background: transparent;
 }
 
 #overviewGroup .originuicc-arranged-folder-open-flying-icon {
-  width: 104px;
-  height: 104px;
   padding: 0;
-  border-radius: 22px;
+  border-radius: 18px;
   background: transparent;
   box-shadow: none;
 }
@@ -537,4 +542,37 @@
 #overviewGroup .originuicc-arranged-folder-open-flying-icon:hover,
 #overviewGroup .originuicc-arranged-folder-open-flying-icon:focus {
   background: transparent;
+}
+
+/* App name label below each icon in open folder */
+#overviewGroup .originuicc-arranged-folder-open-app-label {
+  font-size: 11px;
+  font-weight: 500;
+  text-align: center;
+  height: 28px;
+  padding-top: 4px;
+}
+
+#overviewGroup.originuicc-light .originuicc-arranged-folder-open-app-label {
+  color: rgba(0, 0, 0, 0.85);
+}
+
+#overviewGroup.originuicc-dark .originuicc-arranged-folder-open-app-label {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+/* Scrollbar inside open-folder scroll view — ensure it doesn't overlap the grid */
+#overviewGroup .originuicc-arranged-folder-open-scroll-view StScrollBar {
+  width: 6px;
+  min-width: 6px;
+  margin-right: 4px;
+}
+
+#overviewGroup
+  .originuicc-arranged-folder-open-scroll-view
+  StScrollBar
+  StButton {
+  width: 6px;
+  min-width: 6px;
+  border-radius: 3px;
 }

@@ -30,7 +30,7 @@ const FOLDER_OPEN_ANIMATION_TIME_OPACITY_CLONE_BACKGROUND = 120;
 const FOLDER_CLOSE_ANIMATION_TIME = 350;
 const FOLDER_OPEN_GRID_SCALE = 0.8;
 const FOLDER_OPEN_GRID_OPACITY = 0;
-const FOLDER_OPEN_ICON_DELAY = 10;
+const FOLDER_OPEN_ICON_DELAY = 5;
 const FOLDER_OPEN_VISIBLE_ICON_COUNT = 7;
 const FOLDER_OPEN_VISIBLE_ICON_COUNT_PLUS = 20;
 const CLOSED_FOLDER_PREVIEW_PADDING = 15;
@@ -43,8 +43,9 @@ const ARRANGED_NAV_SIDE_MARGIN = 120;
 const ARRANGED_PAGE_INDICATOR_DOT_SIZE = 7;
 const ARRANGED_PAGE_INDICATOR_DOT_SPACING = 9;
 const ARRANGED_PAGE_INDICATOR_BOTTOM = 10;
-const OPEN_FOLDER_ICON_SIZE = 95;
-const OPEN_FOLDER_ICON_TEXTURE_SIZE = 80;
+const OPEN_FOLDER_ICON_SIZE = 88;
+const OPEN_FOLDER_ICON_SIZEH = 100;
+const OPEN_FOLDER_ICON_TEXTURE_SIZE = 60;
 const ICON_HOVER_IN_TIME = 90;
 const ICON_HOVER_OUT_TIME = 280;
 const FRAME_INTERVAL = 1000 / 60;
@@ -57,6 +58,8 @@ const FOLDER_CLOSE_CUBIC = ["cubic", 0.25, 0.1, 0.25, 1];
 const APP_GRID_ANIMATION_START_SCALE = 1.9;
 const APP_GRID_ANIMATION_DURATION = 900;
 const APP_GRID_ANIMATION_DELAY_RATIO = 120;
+const SCROLL_OVERFLOW_SCALE_MIN = 0.4;
+const SCROLL_OVERFLOW_EDGE_THRESHOLD = 40;
 const APP_GRID_ANIMATION_BEZIER = [
   "linear",
   0,
@@ -976,16 +979,168 @@ class OriginAppGridAnimator {
   }
 }
 
+function _getBottomDockHeight() {
+  try {
+    const monitor = Main.layoutManager?.primaryMonitor;
+    if (!monitor) return 0;
+
+    // Check GNOME Shell controls dash / Ubuntu Dock / Dash-to-Dock
+    const controls = Main.overview?._overview?.controls;
+    const dash =
+      controls?._dash ?? controls?.dash ?? Main.layoutManager?._dash ?? null;
+
+    if (
+      dash &&
+      dash.get_transformed_position &&
+      (dash.visible || dash.is_visible?.())
+    ) {
+      const [x, y] = dash.get_transformed_position();
+      const width = dash.allocation?.get_width?.() || dash.width || 0;
+      const height = dash.allocation?.get_height?.() || dash.height || 0;
+
+      const monitorBottom = monitor.y + monitor.height;
+      // Check if dock is horizontal and located at bottom of primary monitor
+      const isAtBottom = y + height >= monitorBottom - 35 && width > height;
+
+      if (isAtBottom && height > 0) {
+        return height;
+      }
+    }
+  } catch (_) {}
+
+  return 0;
+}
+
+function _getOverviewMetrics() {
+  const monitor = Main.layoutManager?.primaryMonitor || {
+    width: 1920,
+    height: 1080,
+  };
+  const screenWidth = monitor.width || 1920;
+  const screenHeight = monitor.height || 1080;
+
+  // Baseline scale factor relative to 1080p height
+  const scale = Math.clamp(screenHeight / 1080, 0.72, 1.5);
+  const bottomDockHeight = 0;
+  // const bottomDockHeight = _getBottomDockHeight();
+
+  // Closed folder metrics calculated using 1080p baseline constants
+  const closedCellSize = Math.clamp(
+    Math.round(CLOSED_FOLDER_CELL_SIZE * scale),
+    36,
+    68,
+  );
+  const closedCellSpacing = Math.clamp(
+    Math.round(CLOSED_FOLDER_CELL_SPACING * scale),
+    5,
+    12,
+  );
+  const closedPreviewPadding = Math.clamp(
+    Math.round(CLOSED_FOLDER_PREVIEW_PADDING * scale),
+    10,
+    22,
+  );
+  const closedPreviewSize =
+    closedCellSize * 2 + closedCellSpacing + closedPreviewPadding * 2;
+  const closedMiniIconSize = Math.clamp(Math.round(20 * scale), 14, 26);
+
+  // Open folder metrics using 1080p baseline constants
+  const openIconSize = Math.clamp(
+    Math.round(OPEN_FOLDER_ICON_SIZE * scale),
+    64,
+    104,
+  );
+  const openIconTextureSize = Math.clamp(
+    Math.round(OPEN_FOLDER_ICON_TEXTURE_SIZE * scale),
+    42,
+    74,
+  );
+  const openLabelHeight = Math.clamp(Math.round(30 * scale), 24, 38);
+
+  // Tab Switcher metrics using 1080p baseline constants
+  const switchWidth = Math.clamp(
+    Math.round(APP_LIBRARY_SWITCH_WIDTH * scale),
+    230,
+    380,
+  );
+  const switchHeight = Math.clamp(
+    Math.round(APP_LIBRARY_SWITCH_HEIGHT * scale),
+    38,
+    56,
+  );
+  const switchPadding = Math.clamp(
+    Math.round(APP_LIBRARY_SWITCH_PADDING * scale),
+    3,
+    8,
+  );
+  const switchTabWidth = (switchWidth - switchPadding * 2) / 2;
+  const switchTabHeight = switchHeight - switchPadding * 2;
+
+  // Navigation metrics using 1080p baseline constants
+  const navButtonSize = Math.clamp(
+    Math.round(ARRANGED_NAV_BUTTON_SIZE * scale),
+    40,
+    64,
+  );
+  const navSideMargin = Math.clamp(
+    Math.round(ARRANGED_NAV_SIDE_MARGIN * scale),
+    40,
+    160,
+  );
+  const pageIndicatorDotSize = Math.clamp(
+    Math.round(ARRANGED_PAGE_INDICATOR_DOT_SIZE * scale),
+    5,
+    10,
+  );
+  const pageIndicatorDotSpacing = Math.clamp(
+    Math.round(ARRANGED_PAGE_INDICATOR_DOT_SPACING * scale),
+    6,
+    14,
+  );
+  const pageIndicatorBottom =
+    Math.clamp(Math.round(ARRANGED_PAGE_INDICATOR_BOTTOM * scale), 6, 24) +
+    bottomDockHeight;
+
+  return {
+    scale,
+    screenWidth,
+    screenHeight,
+    bottomDockHeight,
+    closedPreviewPadding,
+    closedCellSize,
+    closedCellSpacing,
+    closedPreviewSize,
+    closedMiniIconSize,
+    openIconSize,
+    openIconTextureSize,
+    openLabelHeight,
+    switchWidth,
+    switchHeight,
+    switchPadding,
+    switchTabWidth,
+    switchTabHeight,
+    navButtonSize,
+    navSideMargin,
+    pageIndicatorDotSize,
+    pageIndicatorDotSpacing,
+    pageIndicatorBottom,
+  };
+}
+
 class OriginSegmentedControl {
   constructor(tab1Label, tab2Label, onChanged) {
+    const metrics = _getOverviewMetrics();
+    this._metrics = metrics;
+
     this.actor = new St.Widget({
       style_class: "originuicc-app-library-switch",
       layout_manager: new Clutter.BinLayout(),
       x_align: Clutter.ActorAlign.CENTER,
       y_align: Clutter.ActorAlign.CENTER,
       reactive: true,
-      width: APP_LIBRARY_SWITCH_WIDTH,
-      height: APP_LIBRARY_SWITCH_HEIGHT,
+      width: metrics.switchWidth,
+      height: metrics.switchHeight,
+      margin_bottom: metrics.bottomDockHeight,
     });
 
     this._indicatorTrack = new St.Widget({
@@ -993,15 +1148,15 @@ class OriginSegmentedControl {
       layout_manager: new Clutter.FixedLayout(),
       x_align: Clutter.ActorAlign.CENTER,
       y_align: Clutter.ActorAlign.CENTER,
-      width: APP_LIBRARY_SWITCH_TAB_WIDTH * 2,
-      height: APP_LIBRARY_SWITCH_TAB_HEIGHT,
+      width: metrics.switchTabWidth * 2,
+      height: metrics.switchTabHeight,
       reactive: false,
     });
 
     this._indicator = new St.Widget({
       style_class: "originuicc-app-library-switch-indicator",
-      width: APP_LIBRARY_SWITCH_TAB_WIDTH,
-      height: APP_LIBRARY_SWITCH_TAB_HEIGHT,
+      width: metrics.switchTabWidth,
+      height: metrics.switchTabHeight,
       reactive: false,
     });
 
@@ -1009,8 +1164,8 @@ class OriginSegmentedControl {
       style_class: "originuicc-app-library-switch-tabs",
       x_align: Clutter.ActorAlign.CENTER,
       y_align: Clutter.ActorAlign.CENTER,
-      width: APP_LIBRARY_SWITCH_TAB_WIDTH * 2,
-      height: APP_LIBRARY_SWITCH_TAB_HEIGHT,
+      width: metrics.switchTabWidth * 2,
+      height: metrics.switchTabHeight,
     });
 
     this._buttons = [
@@ -1031,13 +1186,34 @@ class OriginSegmentedControl {
     this.actor.destroy();
   }
 
+  updateMetrics() {
+    const metrics = _getOverviewMetrics();
+    this._metrics = metrics;
+
+    this.actor.set_size(metrics.switchWidth, metrics.switchHeight);
+    this.actor.margin_bottom = metrics.bottomDockHeight;
+
+    this._indicatorTrack.set_size(
+      metrics.switchTabWidth * 2,
+      metrics.switchTabHeight,
+    );
+    this._indicator.set_size(metrics.switchTabWidth, metrics.switchTabHeight);
+    this._tabs.set_size(metrics.switchTabWidth * 2, metrics.switchTabHeight);
+
+    for (const button of this._buttons) {
+      button.set_size(metrics.switchTabWidth, metrics.switchTabHeight);
+    }
+
+    this.setActive(this._activeIndex, false);
+  }
+
   _createButton(label, index, onChanged) {
     const button = new St.Button({
       style_class: "originuicc-app-library-switch-tab",
       label,
       can_focus: true,
-      width: APP_LIBRARY_SWITCH_TAB_WIDTH,
-      height: APP_LIBRARY_SWITCH_TAB_HEIGHT,
+      width: this._metrics.switchTabWidth,
+      height: this._metrics.switchTabHeight,
     });
 
     button.connect("clicked", () => onChanged(index));
@@ -1052,7 +1228,7 @@ class OriginSegmentedControl {
       else this._buttons[i].remove_style_pseudo_class("checked");
     }
 
-    const targetX = index * APP_LIBRARY_SWITCH_TAB_WIDTH;
+    const targetX = index * this._metrics.switchTabWidth;
     this._indicator.remove_all_transitions?.();
 
     if (!animate) {
@@ -1127,6 +1303,16 @@ class OriginArrangedAppGrid {
     this._currentPage = 0;
     this._openFolderOverlay = null;
     this._suspendPageActorSync = false;
+    this._overviewSignalIds = [];
+
+    if (Main.overview) {
+      this._overviewSignalIds.push(
+        Main.overview.connect("hiding", () => this._closeOpenFolder(true)),
+      );
+      this._overviewSignalIds.push(
+        Main.overview.connect("hidden", () => this._closeOpenFolder(false)),
+      );
+    }
 
     this.actor.connect("notify::allocation", () => {
       this._syncShellPositions();
@@ -1141,9 +1327,23 @@ class OriginArrangedAppGrid {
 
       if (!this._suspendPageActorSync) this._syncPageActors(false);
     });
+
+    this.actor.connect("notify::visible", () => {
+      if (this.actor.visible) this._syncShellPositions();
+    });
+
+    this.actor.connect("notify::mapped", () => {
+      if (this.actor.mapped) this._syncShellPositions();
+    });
   }
 
   destroy() {
+    for (const signalId of this._overviewSignalIds) {
+      try {
+        Main.overview.disconnect(signalId);
+      } catch (_) {}
+    }
+    this._overviewSignalIds = [];
     this._closeOpenFolder(false);
     this.actor.destroy();
   }
@@ -1214,34 +1414,41 @@ class OriginArrangedAppGrid {
 
     if (width <= 0 || height <= 0) return;
 
+    const metrics = _getOverviewMetrics();
+
     this._pageBin.set_position(0, 0);
     this._pageBin.set_size(width, height);
     this._navLayer.set_position(0, 0);
     this._navLayer.set_size(width, height);
 
+    this._prevButton.set_size(metrics.navButtonSize, metrics.navButtonSize);
+    this._nextButton.set_size(metrics.navButtonSize, metrics.navButtonSize);
+
     this._prevButton.set_position(
-      ARRANGED_NAV_SIDE_MARGIN,
-      Math.round((height - ARRANGED_NAV_BUTTON_SIZE) / 2),
+      metrics.navSideMargin,
+      Math.round((height - metrics.navButtonSize) / 2),
     );
     this._nextButton.set_position(
       Math.max(
-        ARRANGED_NAV_SIDE_MARGIN,
-        width - ARRANGED_NAV_SIDE_MARGIN - ARRANGED_NAV_BUTTON_SIZE,
+        metrics.navSideMargin,
+        width - metrics.navSideMargin - metrics.navButtonSize,
       ),
-      Math.round((height - ARRANGED_NAV_BUTTON_SIZE) / 2),
+      Math.round((height - metrics.navButtonSize) / 2),
     );
 
     const hasMultiplePages = this._pages.length > 1;
+    const dotSize = Math.clamp(Math.round(7 * metrics.scale), 5, 10);
+    const dotSpacing = Math.clamp(Math.round(9 * metrics.scale), 6, 14);
     const indicatorWidth = hasMultiplePages
-      ? this._pages.length * ARRANGED_PAGE_INDICATOR_DOT_SIZE +
-        Math.max(0, this._pages.length - 1) *
-          ARRANGED_PAGE_INDICATOR_DOT_SPACING
+      ? this._pages.length * dotSize +
+        Math.max(0, this._pages.length - 1) * dotSpacing
       : 1;
-    const indicatorHeight = ARRANGED_PAGE_INDICATOR_DOT_SIZE;
+    const indicatorHeight = dotSize;
 
+    const bottomMargin = Math.clamp(Math.round(12 * metrics.scale), 8, 20);
     this._pageIndicators.set_position(
       Math.round((width - indicatorWidth) / 2),
-      Math.max(0, height - indicatorHeight - ARRANGED_PAGE_INDICATOR_BOTTOM),
+      Math.max(0, height - indicatorHeight - bottomMargin),
     );
   }
 
@@ -1391,14 +1598,15 @@ class OriginArrangedAppGrid {
   }
 
   _createFolderPreview(folder, params = {}) {
+    const metrics = _getOverviewMetrics();
     const preview = new St.Widget({
       style_class: params.styleClass ?? "originuicc-arranged-folder-preview",
       layout_manager: new Clutter.FixedLayout(),
       x_align: Clutter.ActorAlign.CENTER,
       y_align: Clutter.ActorAlign.CENTER,
       reactive: false,
-      width: CLOSED_FOLDER_PREVIEW_SIZE,
-      height: CLOSED_FOLDER_PREVIEW_SIZE,
+      width: metrics.closedPreviewSize,
+      height: metrics.closedPreviewSize,
     });
     preview._previewCells = [];
 
@@ -1417,11 +1625,11 @@ class OriginArrangedAppGrid {
       const column = index % 2;
       const row = Math.floor(index / 2);
       cell.x =
-        CLOSED_FOLDER_PREVIEW_PADDING +
-        column * (CLOSED_FOLDER_CELL_SIZE + CLOSED_FOLDER_CELL_SPACING);
+        metrics.closedPreviewPadding +
+        column * (metrics.closedCellSize + metrics.closedCellSpacing);
       cell.y =
-        CLOSED_FOLDER_PREVIEW_PADDING +
-        row * (CLOSED_FOLDER_CELL_SIZE + CLOSED_FOLDER_CELL_SPACING);
+        metrics.closedPreviewPadding +
+        row * (metrics.closedCellSize + metrics.closedCellSpacing);
 
       preview._previewCells.push(cell);
       preview.add_child(cell);
@@ -1431,7 +1639,8 @@ class OriginArrangedAppGrid {
   }
 
   _createClosedAppCell(app) {
-    const icon = _createIconTexture(app, 52);
+    const metrics = _getOverviewMetrics();
+    const icon = _createIconTexture(app, metrics.closedCellSize);
     const button = new St.Button({
       style_class: "originuicc-arranged-app-cell",
       can_focus: true,
@@ -1440,8 +1649,8 @@ class OriginArrangedAppGrid {
       y_align: Clutter.ActorAlign.CENTER,
       x_expand: false,
       y_expand: false,
-      width: CLOSED_FOLDER_CELL_SIZE,
-      height: CLOSED_FOLDER_CELL_SIZE,
+      width: metrics.closedCellSize,
+      height: metrics.closedCellSize,
       child: icon,
     });
 
@@ -1462,6 +1671,10 @@ class OriginArrangedAppGrid {
   }
 
   _createMoreAppsCell(apps, onClicked = null) {
+    const metrics = _getOverviewMetrics();
+    const cellSize = metrics.closedCellSize;
+    const miniSize = metrics.closedMiniIconSize;
+
     const cell = new St.Button({
       style_class: "originuicc-arranged-app-cell originuicc-arranged-more-cell",
       can_focus: !!onClicked,
@@ -1470,15 +1683,15 @@ class OriginArrangedAppGrid {
       y_align: Clutter.ActorAlign.CENTER,
       x_expand: false,
       y_expand: false,
-      width: CLOSED_FOLDER_CELL_SIZE,
-      height: CLOSED_FOLDER_CELL_SIZE,
+      width: cellSize,
+      height: cellSize,
     });
     const content = new St.Widget({
       style_class: "originuicc-arranged-more-content",
       layout_manager: new Clutter.FixedLayout(),
       reactive: false,
-      width: CLOSED_FOLDER_CELL_SIZE,
-      height: CLOSED_FOLDER_CELL_SIZE,
+      width: cellSize,
+      height: cellSize,
     });
     content._miniIconCells = [];
 
@@ -1488,6 +1701,10 @@ class OriginArrangedAppGrid {
         return Clutter.EVENT_STOP;
       });
 
+    const gap = Math.clamp(Math.round(4 * metrics.scale), 2, 6);
+    const totalMiniWidth = miniSize * 2 + gap;
+    const marginOffset = Math.round((cellSize - totalMiniWidth) / 2);
+
     for (let index = 0; index < 4; index++) {
       const app = apps[index];
       const iconBin = new St.Bin({
@@ -1496,16 +1713,16 @@ class OriginArrangedAppGrid {
         y_align: Clutter.ActorAlign.CENTER,
         x_expand: false,
         y_expand: false,
-        width: 22,
-        height: 22,
+        width: miniSize,
+        height: miniSize,
       });
       iconBin._originuiccMiniIcon = true;
-      iconBin._originuiccSourceIconSize = 20;
+      iconBin._originuiccSourceIconSize = miniSize - 2;
 
-      iconBin.x = 3 + (index % 2) * 26;
-      iconBin.y = 3 + Math.floor(index / 2) * 26;
+      iconBin.x = marginOffset + (index % 2) * (miniSize + gap);
+      iconBin.y = marginOffset + Math.floor(index / 2) * (miniSize + gap);
 
-      if (app) iconBin.child = _createIconTexture(app, 20);
+      if (app) iconBin.child = _createIconTexture(app, miniSize - 2);
 
       content._miniIconCells.push(iconBin);
       content.add_child(iconBin);
@@ -1517,6 +1734,7 @@ class OriginArrangedAppGrid {
   }
 
   _createEmptyCell() {
+    const metrics = _getOverviewMetrics();
     return new St.Widget({
       style_class:
         "originuicc-arranged-app-cell originuicc-arranged-empty-cell",
@@ -1525,8 +1743,8 @@ class OriginArrangedAppGrid {
       y_align: Clutter.ActorAlign.CENTER,
       x_expand: false,
       y_expand: false,
-      width: 52,
-      height: 52,
+      width: metrics.closedCellSize,
+      height: metrics.closedCellSize,
     });
   }
 
@@ -1691,6 +1909,12 @@ class OriginArrangedAppGrid {
       appGrid.icons,
       sourceIconFrames,
     );
+    // Fallback: make sure labels are fully visible in case animation does not set opacity
+    for (const { label } of appGrid.icons) {
+      if (label && !label.is_destroyed?.()) {
+        label.opacity = 255;
+      }
+    }
 
     overlay.connect("button-press-event", (_actor, event) =>
       this._handleOpenFolderButtonPress(event),
@@ -1745,7 +1969,11 @@ class OriginArrangedAppGrid {
     }
     if (scrollView) scrollView.vscrollbar_policy = St.PolicyType.NEVER;
 
-    if (scrollAdjustment && adjustmentSignalId) {
+    if (scrollAdjustment) {
+      if (scrollAdjustment._scrollAnimationId) {
+        GLib.source_remove(scrollAdjustment._scrollAnimationId);
+        scrollAdjustment._scrollAnimationId = 0;
+      }
       try {
         scrollAdjustment.disconnect(adjustmentSignalId);
       } catch (_) {}
@@ -1803,6 +2031,16 @@ class OriginArrangedAppGrid {
     });
   }
 
+  _getCloneYPosition(height, cloneHeight) {
+    const metrics = _getOverviewMetrics();
+    const switcherSafetyMargin =
+      metrics.switchHeight +
+      metrics.bottomDockHeight +
+      Math.round(18 * metrics.scale);
+    const availableHeight = Math.max(0, height - switcherSafetyMargin);
+    return Math.max(12, Math.round((availableHeight - cloneHeight) / 2));
+  }
+
   _syncOpenOverlayGeometry(overlay, clone, iconLayer, content = null) {
     const width = this.actor.allocation?.get_width?.() || this.actor.width || 0;
     const height =
@@ -1817,10 +2055,9 @@ class OriginArrangedAppGrid {
     iconLayer.set_position(0, 0);
     iconLayer.set_size(width, height);
     clone.set_size(cloneSize.width, cloneSize.height);
-    clone.set_position(
-      Math.round((width - cloneSize.width) / 2),
-      Math.round((height - cloneSize.height) / 2),
-    );
+
+    const cloneY = this._getCloneYPosition(height, cloneSize.height);
+    clone.set_position(Math.round((width - cloneSize.width) / 2), cloneY);
 
     if (content) {
       content.set_position(0, 0);
@@ -1834,11 +2071,13 @@ class OriginArrangedAppGrid {
 
     if (!state) return Clutter.EVENT_PROPAGATE;
 
+    // Do NOT close folder if click/drag is inside open folder clone (content/scrollbar) or iconLayer
     if (
-      target !== state.iconLayer &&
+      this._isActorOrDescendant(target, state.clone) ||
       this._isActorOrDescendant(target, state.iconLayer)
-    )
+    ) {
       return Clutter.EVENT_PROPAGATE;
+    }
 
     this._closeOpenFolder(true);
     return Clutter.EVENT_STOP;
@@ -1853,17 +2092,37 @@ class OriginArrangedAppGrid {
   }
 
   _getOpenFolderSize() {
-    const allocationHeight = this.actor.allocation?.get_height?.() ?? 0;
-    const monitor = Main.layoutManager.primaryMonitor;
-    const fallbackHeight = Math.round((monitor?.height ?? 900) * 0.48);
-    const height = Math.max(
-      420,
-      Math.round(allocationHeight * 0.84) || fallbackHeight,
+    const metrics = _getOverviewMetrics();
+    const allocationHeight =
+      this.actor.allocation?.get_height?.() || metrics.screenHeight || 900;
+
+    // Reserved vertical space for bottom switcher & dockbar
+    const reservedVerticalSpace =
+      metrics.switchHeight +
+      metrics.bottomDockHeight +
+      Math.round(18 * metrics.scale);
+    const availableHeight = Math.max(
+      300,
+      allocationHeight - reservedVerticalSpace,
+    );
+
+    // Height matches available height of nav-layer region top to bottom
+    const height = Math.clamp(
+      Math.round(availableHeight * 0.94),
+      Math.round(420 * metrics.scale),
+      Math.round(780 * metrics.scale),
+    );
+
+    // Card width scales proportionally
+    const width = Math.clamp(
+      Math.round(height * 1.08),
+      Math.round(460 * metrics.scale),
+      Math.round(800 * metrics.scale),
     );
 
     return {
       height,
-      width: Math.round(height * 1.2),
+      width,
     };
   }
 
@@ -1942,7 +2201,6 @@ class OriginArrangedAppGrid {
 
   _getSurfaceSourceFrameRelative(clone, sourceFrame) {
     // Stage position của grid/container hiện tại.
-    // Không lấy transform của clone.
     const [gridStageX, gridStageY] = this.actor.get_transformed_position();
 
     const gridWidth =
@@ -1954,10 +2212,8 @@ class OriginArrangedAppGrid {
     const { width: cloneWidth, height: cloneHeight } =
       this._getCloneTargetSize(clone);
 
-    // Đây chính là vị trí clone sau khi _syncOpenOverlayGeometry()
-    // center nó trong overlay.
     const cloneX = Math.round((gridWidth - cloneWidth) / 2);
-    const cloneY = Math.round((gridHeight - cloneHeight) / 2);
+    const cloneY = this._getCloneYPosition(gridHeight, cloneHeight);
 
     // Frame stage dự kiến của clone.
     const cloneStageX = gridStageX + cloneX;
@@ -2034,6 +2290,7 @@ class OriginArrangedAppGrid {
       orientation: Clutter.Orientation.VERTICAL,
       x_align: Clutter.ActorAlign.CENTER,
       y_align: Clutter.ActorAlign.START,
+      style: `padding-top: ${SCROLL_OVERFLOW_EDGE_THRESHOLD}px; padding-bottom: ${SCROLL_OVERFLOW_EDGE_THRESHOLD}px;`,
     });
     const scrollView = new St.ScrollView({
       style_class: "originuicc-arranged-folder-open-scroll-view",
@@ -2048,7 +2305,7 @@ class OriginArrangedAppGrid {
     scrollView._originuiccOpenClone = clone;
 
     const icons = [];
-    const columns = 5;
+    const columns = 4;
 
     for (let i = 0; i < apps.length; i += columns) {
       const row = new St.BoxLayout({
@@ -2059,7 +2316,7 @@ class OriginArrangedAppGrid {
       for (let j = 0; j < columns; j++) {
         const app = apps[i + j];
         const slot = app
-          ? this._createOpenFolderSlot()
+          ? this._createOpenFolderSlot(app.get_display_name?.() ?? "")
           : this._createOpenFolderSpacer();
 
         slot._originuiccOpenClone = clone;
@@ -2067,7 +2324,12 @@ class OriginArrangedAppGrid {
         row.add_child(slot);
         if (app) {
           const iconActor = this._createOpenFolderFlyingIcon(app, iconLayer);
-          icons.push({ slot, iconActor, scrollView });
+          icons.push({
+            slot,
+            iconActor,
+            scrollView,
+            label: slot._originuiccLabel,
+          });
         }
       }
 
@@ -2086,58 +2348,122 @@ class OriginArrangedAppGrid {
 
     if (direction === Clutter.ScrollDirection.SMOOTH) {
       const [, dy] = event.get_scroll_delta?.() ?? [0, 0];
-      delta = dy * 30;
+      delta = dy * 40;
     } else if (
       direction === Clutter.ScrollDirection.DOWN ||
       direction === Clutter.ScrollDirection.RIGHT
     ) {
-      delta = 30;
+      delta = 50;
     } else if (
       direction === Clutter.ScrollDirection.UP ||
       direction === Clutter.ScrollDirection.LEFT
     ) {
-      delta = -30;
+      delta = -50;
     }
 
     if (delta === 0) return Clutter.EVENT_PROPAGATE;
 
     const upper = adjustment.upper ?? 0;
     const pageSize = adjustment.page_size ?? 0;
-    const value = Math.clamp(
-      adjustment.value + delta,
-      0,
-      Math.max(0, upper - pageSize),
-    );
+    const maxVal = Math.max(0, upper - pageSize);
 
-    if (adjustment.set_value) adjustment.set_value(value);
-    else adjustment.value = value;
+    const currentBase = adjustment._originuiccTargetValue ?? adjustment.value;
+    const targetValue = Math.clamp(currentBase + delta, 0, maxVal);
+    adjustment._originuiccTargetValue = targetValue;
 
-    this._syncFlyingIconSlots(openIcons);
+    this._animateScrollAdjustment(adjustment, targetValue, openIcons);
     return Clutter.EVENT_STOP;
   }
 
+  _animateScrollAdjustment(adjustment, targetValue, openIcons) {
+    if (adjustment._scrollAnimationId) {
+      GLib.source_remove(adjustment._scrollAnimationId);
+      adjustment._scrollAnimationId = 0;
+    }
+
+    const step = () => {
+      const current = adjustment.value;
+      const diff = targetValue - current;
+
+      if (Math.abs(diff) < 0.5) {
+        if (adjustment.set_value) adjustment.set_value(targetValue);
+        else adjustment.value = targetValue;
+        adjustment._originuiccTargetValue = targetValue;
+        this._syncFlyingIconSlots(openIcons);
+        adjustment._scrollAnimationId = 0;
+        return GLib.SOURCE_REMOVE;
+      }
+
+      const nextVal = current + diff * 0.22;
+      if (adjustment.set_value) adjustment.set_value(nextVal);
+      else adjustment.value = nextVal;
+
+      this._syncFlyingIconSlots(openIcons);
+      return GLib.SOURCE_CONTINUE;
+    };
+
+    adjustment._scrollAnimationId = GLib.timeout_add(
+      GLib.PRIORITY_DEFAULT,
+      16,
+      step,
+    );
+  }
+
   _syncFlyingIconSlots(openIcons) {
-    for (const { slot, iconActor, scrollView } of openIcons) {
+    for (const { slot, iconActor, scrollView, label } of openIcons) {
       if (!slot.is_destroyed?.() && !iconActor.is_destroyed?.()) {
         const targetFrame = this._placeFlyingIconAtSlot(iconActor, slot);
-        this._syncFlyingIconVisibility(iconActor, targetFrame, scrollView);
+        this._syncFlyingIconVisibility(
+          iconActor,
+          targetFrame,
+          scrollView,
+          label,
+        );
       }
     }
   }
 
-  _createOpenFolderSlot() {
-    return new St.Widget({
+  _createOpenFolderSlot(appName = "") {
+    const metrics = _getOverviewMetrics();
+    const slot = new St.BoxLayout({
       style_class: "originuicc-arranged-folder-open-app-slot",
+      orientation: Clutter.Orientation.VERTICAL,
       reactive: false,
       x_expand: false,
       y_expand: false,
-      width: OPEN_FOLDER_ICON_SIZE,
-      height: OPEN_FOLDER_ICON_SIZE,
+      x_align: Clutter.ActorAlign.CENTER,
+      y_align: Clutter.ActorAlign.START,
+      width: metrics.openIconSize,
     });
+
+    const iconPlaceholder = new St.Widget({
+      style_class: "originuicc-arranged-folder-open-app-icon-ph",
+      reactive: false,
+      width: metrics.openIconSize,
+      height: metrics.openIconSize,
+    });
+
+    const label = new St.Label({
+      style_class: "originuicc-arranged-folder-open-app-label",
+      text: appName,
+      x_align: Clutter.ActorAlign.CENTER,
+      y_align: Clutter.ActorAlign.CENTER,
+      x_expand: false,
+      opacity: 0,
+    });
+    label.clutter_text.line_wrap = false;
+    label.clutter_text.ellipsize = imports.gi.Pango.EllipsizeMode.END;
+
+    slot.add_child(iconPlaceholder);
+    slot.add_child(label);
+    slot._originuiccLabel = label;
+
+    return slot;
   }
 
   _createOpenFolderFlyingIcon(app, iconLayer) {
-    const icon = _createIconTexture(app, OPEN_FOLDER_ICON_TEXTURE_SIZE);
+    const metrics = _getOverviewMetrics();
+    const icon = _createIconTexture(app, metrics.openIconTextureSize);
     const button = new St.Button({
       style_class: "originuicc-arranged-folder-open-flying-icon",
       can_focus: true,
@@ -2146,8 +2472,8 @@ class OriginArrangedAppGrid {
       reactive: true,
       x_expand: false,
       y_expand: false,
-      width: OPEN_FOLDER_ICON_SIZE,
-      height: OPEN_FOLDER_ICON_SIZE,
+      width: metrics.openIconSize,
+      height: metrics.openIconSize,
     });
 
     let appActivated = false;
@@ -2168,13 +2494,14 @@ class OriginArrangedAppGrid {
   }
 
   _createOpenFolderSpacer() {
+    const LABEL_AREA_HEIGHT = 32;
     return new St.Widget({
       style_class: "originuicc-arranged-folder-open-app-spacer",
       reactive: false,
       x_expand: false,
       y_expand: false,
       width: OPEN_FOLDER_ICON_SIZE,
-      height: OPEN_FOLDER_ICON_SIZE,
+      height: OPEN_FOLDER_ICON_SIZEH + LABEL_AREA_HEIGHT,
     });
   }
 
@@ -2188,7 +2515,7 @@ class OriginArrangedAppGrid {
       if (iconLayer.is_destroyed?.() || surfaceLayer.is_destroyed?.())
         return GLib.SOURCE_REMOVE;
 
-      openIcons.forEach(({ slot, iconActor, scrollView }, index) => {
+      openIcons.forEach(({ slot, iconActor, scrollView, label }, index) => {
         if (iconActor.is_destroyed?.()) return;
 
         iconActor.remove_all_transitions?.();
@@ -2246,6 +2573,20 @@ class OriginArrangedAppGrid {
             cubic: FOLDER_OPEN_CUBIC,
           },
         );
+
+        // Animate label: bắt đầu ẩn, xuất hiện sau icon một chút
+        if (label && !label.is_destroyed?.()) {
+          label.opacity = 0;
+          _easeActor(
+            label,
+            { opacity: 255 },
+            {
+              delay: delay + Math.round(FOLDER_OPEN_ANIMATION_TIME * 0.4),
+              duration: Math.round(FOLDER_OPEN_ANIMATION_TIME * 0.5),
+              cubic: FOLDER_OPEN_CUBIC,
+            },
+          );
+        }
       });
 
       _easeActor(
@@ -2279,14 +2620,25 @@ class OriginArrangedAppGrid {
       );
     }
 
-    openIcons.forEach(({ slot, iconActor, scrollView }, index) => {
+    openIcons.forEach(({ slot, iconActor, scrollView, label }, index) => {
       if (iconActor.is_destroyed?.()) return;
+
+      // Ẩn label ngay lập tức khi đóng
+      if (label && !label.is_destroyed?.()) {
+        _easeActor(
+          label,
+          { opacity: 0 },
+          {
+            duration: Math.round(FOLDER_CLOSE_ANIMATION_TIME * 0.3),
+            cubic: FOLDER_CLOSE_CUBIC,
+          },
+        );
+      }
 
       iconActor.remove_all_transitions?.();
       const targetFrame = this._placeFlyingIconAtSlot(iconActor, slot);
       this._syncFlyingIconVisibility(iconActor, targetFrame, scrollView);
-      if (index < sourceIconFrames.length && sourceIconFrames[index])
-        iconActor.visible = true;
+
       const delay =
         index <
         FOLDER_OPEN_VISIBLE_ICON_COUNT + FOLDER_OPEN_VISIBLE_ICON_COUNT_PLUS
@@ -2296,19 +2648,31 @@ class OriginArrangedAppGrid {
               1) *
             FOLDER_OPEN_ICON_DELAY;
 
-      if (index < sourceIconFrames.length && sourceIconFrames[index]) {
+      const isPreviewIcon =
+        index < sourceIconFrames.length && sourceIconFrames[index];
+
+      if (isPreviewIcon) {
+        // Đảm bảo 7 icon thuộc closed folder preview LUÔN LUÔN hiện để chạy animation đóng
+        // kể cả khi trước đó đang nằm ngoài viewport cuộn (scrolled out)
+        iconActor.visible = true;
+        iconActor.show();
+
         const offset = this._getSourceFrameOffset(
           sourceIconFrames[index],
           iconActor.get_parent(),
           targetFrame,
         );
-        const scale = this._getFrameScale(sourceIconFrames[index], iconActor);
+        const targetScale = this._getFrameScale(
+          sourceIconFrames[index],
+          iconActor,
+        );
+
         _easeActor(
           iconActor,
           {
             opacity: 255,
-            scale_x: scale,
-            scale_y: scale,
+            scale_x: targetScale,
+            scale_y: targetScale,
             translation_x: offset.x,
             translation_y: offset.y,
           },
@@ -2319,27 +2683,42 @@ class OriginArrangedAppGrid {
           },
         );
       } else {
-        const offset = this._getSourceFrameOffset(
-          sourceIconFrames[3],
-          iconActor.get_parent(),
-          targetFrame,
-        );
-        const scale = this._getFrameScale(sourceIconFrames[3], iconActor);
-        _easeActor(
-          iconActor,
-          {
-            opacity: 0,
-            scale_x: scale,
-            scale_y: scale,
-            translation_x: offset.x,
-            translation_y: offset.y,
-          },
-          {
-            delay,
-            duration: FOLDER_CLOSE_ANIMATION_TIME,
-            cubic: FOLDER_CLOSE_CUBIC,
-          },
-        );
+        const fallbackSource =
+          sourceIconFrames[3] || sourceIconFrames[0] || null;
+
+        if (fallbackSource) {
+          const offset = this._getSourceFrameOffset(
+            fallbackSource,
+            iconActor.get_parent(),
+            targetFrame,
+          );
+          const targetScale = this._getFrameScale(fallbackSource, iconActor);
+          _easeActor(
+            iconActor,
+            {
+              opacity: 0,
+              scale_x: targetScale,
+              scale_y: targetScale,
+              translation_x: offset.x,
+              translation_y: offset.y,
+            },
+            {
+              delay,
+              duration: FOLDER_CLOSE_ANIMATION_TIME,
+              cubic: FOLDER_CLOSE_CUBIC,
+            },
+          );
+        } else {
+          _easeActor(
+            iconActor,
+            { opacity: 0 },
+            {
+              delay,
+              duration: FOLDER_CLOSE_ANIMATION_TIME,
+              cubic: FOLDER_CLOSE_CUBIC,
+            },
+          );
+        }
       }
     });
   }
@@ -2395,6 +2774,7 @@ class OriginArrangedAppGrid {
   }
 
   _placeFlyingIconAtSlot(iconActor, slot) {
+    const metrics = _getOverviewMetrics();
     const parent = iconActor.get_parent();
     const slotFrame = this._getFinalActorFrameRelativeToLayer(
       slot,
@@ -2407,13 +2787,15 @@ class OriginArrangedAppGrid {
     const iconWidth =
       iconActor.allocation?.get_width?.() ||
       iconActor.width ||
-      OPEN_FOLDER_ICON_SIZE;
+      metrics.openIconSize;
     const iconHeight =
       iconActor.allocation?.get_height?.() ||
       iconActor.height ||
-      OPEN_FOLDER_ICON_SIZE;
+      metrics.openIconSize;
+    // Icon được đặt ở đầu slot (phần trên), không center toàn bộ slot
+    // vì slot giờ cao hơn để chứa label.
     const x = slotFrame.x + (slotFrame.width - iconWidth) / 2;
-    const y = slotFrame.y + (slotFrame.height - iconHeight) / 2;
+    const y = slotFrame.y; // góc trên của slot
 
     iconActor.set_position(Math.round(x), Math.round(y));
     return { x, y, width: iconWidth, height: iconHeight };
@@ -2442,9 +2824,11 @@ class OriginArrangedAppGrid {
     const { width: cloneWidth, height: cloneHeight } =
       this._getCloneTargetSize(clone);
 
+    const cloneY = this._getCloneYPosition(layerHeight, cloneHeight);
+
     return {
       x: Math.round((layerWidth - cloneWidth) / 2),
-      y: Math.round((layerHeight - cloneHeight) / 2),
+      y: cloneY,
       width: cloneWidth,
       height: cloneHeight,
     };
@@ -2510,7 +2894,7 @@ class OriginArrangedAppGrid {
     };
   }
 
-  _syncFlyingIconVisibility(iconActor, targetFrame, scrollView) {
+  _syncFlyingIconVisibility(iconActor, targetFrame, scrollView, label = null) {
     if (!scrollView) return true;
 
     const viewportFrame = this._getFinalActorFrameRelativeToLayer(
@@ -2518,11 +2902,74 @@ class OriginArrangedAppGrid {
       iconActor.get_parent(),
       scrollView._originuiccOpenClone,
     );
-    const visible =
-      targetFrame.y + targetFrame.height > viewportFrame.y &&
-      targetFrame.y < viewportFrame.y + viewportFrame.height;
 
+    const viewportTop = viewportFrame.y;
+    const viewportBottom = viewportFrame.y + viewportFrame.height;
+    const iconTop = targetFrame.y;
+    const iconBottom = targetFrame.y + targetFrame.height;
+    const iconHeight = targetFrame.height;
+
+    // Khoảng cách mép (pixel) bắt đầu thu nhỏ icon khi cuộn gần mép trên/dưới
+    const edgeThreshold = SCROLL_OVERFLOW_EDGE_THRESHOLD;
+    let dist = 0; // 0 = ở giữa viewport, 1 = vượt ra ngoài mép
+
+    if (iconTop < viewportTop + edgeThreshold) {
+      // Gần hoặc vượt quá mép trên
+      const distanceNeeded = edgeThreshold + iconHeight * 0.4;
+      dist = Math.clamp(
+        (viewportTop + edgeThreshold - iconTop) / distanceNeeded,
+        0,
+        1,
+      );
+    } else if (iconBottom > viewportBottom - edgeThreshold) {
+      // Gần hoặc vượt quá mép dưới
+      const distanceNeeded = edgeThreshold + iconHeight * 0.4;
+      dist = Math.clamp(
+        (iconBottom - (viewportBottom - edgeThreshold)) / distanceNeeded,
+        0,
+        1,
+      );
+    }
+
+    // Càng gần mép thì scale càng giảm từ 1.0 về 0.2. Vượt qua mép scale = 0.2
+    const scale = Math.max(
+      SCROLL_OVERFLOW_SCALE_MIN,
+      1.0 - dist * (1 - SCROLL_OVERFLOW_SCALE_MIN),
+    );
+
+    // Xử lý opacity:
+    // Scale 1.0 -> 0.6 : opacity giữ nguyên 255
+    // Scale 0.6 -> 0.2 : opacity giảm dần về 0
+    let opacity = 255;
+    if (scale <= SCROLL_OVERFLOW_SCALE_MIN) {
+      opacity = 0;
+    } else if (scale < 0.7) {
+      const norm =
+        (scale - SCROLL_OVERFLOW_SCALE_MIN) / (0.6 - SCROLL_OVERFLOW_SCALE_MIN);
+      opacity = Math.round(norm * 255);
+    }
+
+    const visible = opacity > 0 && scale > SCROLL_OVERFLOW_SCALE_MIN;
     iconActor.visible = visible;
+
+    // Áp dụng scale & opacity cho iconActor nếu không chạy animation mở/đóng
+    if (
+      !iconActor.get_transition("scale-x") &&
+      !iconActor.get_transition("opacity")
+    ) {
+      iconActor.set_pivot_point(0.5, 0.5);
+      iconActor.scale_x = scale;
+      iconActor.scale_y = scale;
+      iconActor.opacity = opacity;
+    }
+
+    // Đồng bộ opacity cho label nếu có
+    if (label && !label.is_destroyed?.()) {
+      if (!label.get_transition("opacity")) {
+        label.opacity = opacity;
+      }
+    }
+
     return visible;
   }
 
@@ -2630,6 +3077,7 @@ export class OverviewRemake {
 
     this._createOverviewWallpaper();
     this._bindOverviewWallpaperSignals();
+    this._bindDisplayChangeSignals();
     this._setupSearchEntryBinClass();
     this._setupAppLibrarySwitcher();
     this._appGridAnimator.enable();
@@ -2637,6 +3085,8 @@ export class OverviewRemake {
   }
 
   disable() {
+    this._unbindDisplayChangeSignals();
+
     if (this._searchEntryBinSetupId) {
       GLib.source_remove(this._searchEntryBinSetupId);
       this._searchEntryBinSetupId = 0;
@@ -2720,6 +3170,60 @@ export class OverviewRemake {
     if (this._monitorSignalId) {
       Main.layoutManager.disconnect(this._monitorSignalId);
       this._monitorSignalId = 0;
+    }
+  }
+
+  _bindDisplayChangeSignals() {
+    this._displaySignalIds = [];
+
+    const layoutId = Main.layoutManager.connect("monitors-changed", () => {
+      this._onDisplayMetricsChanged();
+    });
+    this._displaySignalIds.push([Main.layoutManager, layoutId]);
+
+    if (this._themeContext) {
+      const scaleId = this._themeContext.connect("notify::scale-factor", () => {
+        this._updateOverviewWallpaperEffects();
+        this._onDisplayMetricsChanged();
+      });
+      this._displaySignalIds.push([this._themeContext, scaleId]);
+    }
+
+    if (global.display) {
+      const workareaId = global.display.connect("workareas-changed", () => {
+        this._onDisplayMetricsChanged();
+      });
+      this._displaySignalIds.push([global.display, workareaId]);
+    }
+
+    if (Main.overview) {
+      const showingId = Main.overview.connect("showing", () => {
+        this._onDisplayMetricsChanged();
+      });
+      this._displaySignalIds.push([Main.overview, showingId]);
+
+      const shownId = Main.overview.connect("shown", () => {
+        this._onDisplayMetricsChanged();
+      });
+      this._displaySignalIds.push([Main.overview, shownId]);
+    }
+  }
+
+  _unbindDisplayChangeSignals() {
+    if (this._displaySignalIds) {
+      for (const [target, id] of this._displaySignalIds) {
+        try {
+          target.disconnect(id);
+        } catch (_) {}
+      }
+      this._displaySignalIds = [];
+    }
+  }
+
+  _onDisplayMetricsChanged() {
+    if (this._appDisplayState) {
+      this._appDisplayState.switcher?.updateMetrics?.();
+      this._rebuildArrangedGrid();
     }
   }
 

@@ -1,0 +1,8 @@
+# /etc/default/grub for ester infinityOS
+# See /usr/share/doc/grub-common/README.Debian.gz and grub-mkconfig(8).
+
+GRUB_DEFAULT=0
+GRUB_TIMEOUT=5
+GRUB_DISTRIBUTOR="ester infinityOS"
+GRUB_CMDLINE_LINUX_DEFAULT="quiet splash"
+GRUB_CMDLINE_LINUX=""

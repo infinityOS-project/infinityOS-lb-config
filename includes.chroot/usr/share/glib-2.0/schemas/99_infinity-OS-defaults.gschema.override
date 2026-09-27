@@ -2,7 +2,7 @@
 icon-theme='Radience'
 
 [org.gnome.shell]
-enabled-extensions=['blur-my-shell@aunetx', 'dash-to-dock@micxgx.gmail.com', 'OriginUICC@quandz24.extension', 'OriginUIPrivateMode@quandz24.extension', 'user-theme@gnome-shell-extensions.gcampax.github.com']
+enabled-extensions=['blur-my-shell@aunetx', 'dash-to-dock@micxgx.gmail.com', 'Origin@appscreen', 'OriginUICC@quandz24.extension', 'OriginUIPrivateMode@quandz24.extension', 'user-theme@gnome-shell-extensions.gcampax.github.com']
 disable-user-extensions=false
 
 [org.gnome.desktop.background]

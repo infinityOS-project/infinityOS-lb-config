@@ -63,10 +63,37 @@ jobs:
           sha256sum "${{ steps.find_iso.outputs.iso_name }}" > "${{ steps.find_iso.outputs.iso_name }}.sha256"
           echo "checksum_path=$(pwd)/${{ steps.find_iso.outputs.iso_name }}.sha256" >> "$GITHUB_OUTPUT"
 
-      - name: Create GitHub Release with ISO and checksum
+      - name: Upload ISO to Cloudflare R2
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: auto
+        run: |
+          ENDPOINT="${{ secrets.R2_ENDPOINT }}"
+          STAGING_KEY="iso/infinityOS-amd64.iso.uploading"
+          FINAL_KEY="iso/infinityOS-amd64.iso"
+
+          # Upload to a staging key, then do a server-side copy onto the live
+          # key, so files.jotalea.com.ar/iso/infinityOS-amd64.iso is only ever
+          # repointed once the full ISO has landed successfully in R2.
+          #
+          # The copy uses `s3api copy-object`, not `s3 cp`: R2 doesn't implement
+          # the S3 tagging API, and `s3 cp`'s multipart-copy path calls
+          # GetObjectTagging first to carry tags over, which R2 rejects with
+          # NotImplemented. copy-object issues a single CopyObject request
+          # (our file is well under the 5GiB single-copy limit) whose tag
+          # handling is done server-side, so it never touches that endpoint.
+          aws s3 cp "${{ steps.find_iso.outputs.iso_path }}" "s3://files/${STAGING_KEY}" --endpoint-url "$ENDPOINT"
+          aws s3api copy-object --endpoint-url "$ENDPOINT" --bucket files --copy-source "files/${STAGING_KEY}" --key "$FINAL_KEY"
+          aws s3 rm "s3://files/${STAGING_KEY}" --endpoint-url "$ENDPOINT"
+
+          aws s3 cp "${{ steps.checksum.outputs.checksum_path }}" "s3://files/iso/infinityOS-amd64.iso.sha256" --endpoint-url "$ENDPOINT"
+
+      - name: Create GitHub Release with checksum
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            ${{ steps.find_iso.outputs.iso_path }}
             ${{ steps.checksum.outputs.checksum_path }}
           generate_release_notes: true
+          body: |
+            ISO download: https://files.jotalea.com.ar/iso/infinityOS-amd64.iso

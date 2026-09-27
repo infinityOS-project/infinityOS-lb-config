@@ -1,5 +1,7 @@
 gnome-core
 gnome-shell-extensions
+gdm3
+dconf-cli
 calamares
 calamares-settings-debian
 live-boot

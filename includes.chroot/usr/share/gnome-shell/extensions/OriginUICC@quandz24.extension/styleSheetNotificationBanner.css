@@ -1,0 +1,23 @@
+.originuicc-notification-bin {
+  /* Slight padding so the glass card doesn't touch the screen edge */
+  /* padding: 6px; */
+}
+
+.originuicc-notification-banner {
+  /* background-color: rgba(255, 255, 255, 0.14);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 16px;
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.18),
+    0 2px 8px rgba(0, 0, 0, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.28); */
+}
+
+.dark .originuicc-notification-banner {
+  /* background-color: rgba(20, 20, 28, 0.55);
+  border-color: rgba(255, 255, 255, 0.12);
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.4),
+    0 2px 8px rgba(0, 0, 0, 0.28),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1); */
+}

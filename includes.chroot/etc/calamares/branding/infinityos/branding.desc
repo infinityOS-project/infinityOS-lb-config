@@ -1,0 +1,37 @@
+---
+componentName:   infinityos
+welcomeStyleCalamares: true
+welcomeExpandingLogo: true
+windowExpanding: normal
+windowSize: 800px,580px
+windowPlacement: center
+
+strings:
+    productName:         ester infinityOS
+    shortProductName:    infinityOS
+    version:             1
+    shortVersion:        1
+    versionedName:       ester infinityOS 1
+    shortVersionedName:  infinityOS 1
+    bootloaderEntryName: ester infinityOS
+    productUrl:          https://github.com/infinityOS-project
+    supportUrl:          https://github.com/infinityOS-project
+    knownIssuesUrl:      https://github.com/infinityOS-project
+    releaseNotesUrl:     https://github.com/infinityOS-project
+    donateUrl:           https://github.com/infinityOS-project
+
+sidebar: widget
+navigation: widget
+
+images:
+    productLogo:         "infinityos-logo.png"
+    productIcon:         "infinityos-logo.png"
+    productWelcome:      "welcome.png"
+
+style:
+   SidebarBackground:    "#0d0d17"
+   SidebarText:          "#FFFFFF"
+   SidebarTextCurrent:   "#fbfbfb"
+   SidebarBackgroundCurrent: "#1a1a2e"
+
+slideshowAPI: 2
